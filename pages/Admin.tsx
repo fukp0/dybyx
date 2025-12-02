@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, AppSettings, DEFAULT_BUY_MSG, DEFAULT_IMAGE } from '../types';
 import { ProductCard } from '../components/ProductCard';
-import { Plus, Save, X, Settings as SettingsIcon, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Save, X, Settings as SettingsIcon, Image as ImageIcon, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
@@ -21,6 +21,7 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
   // Settings State
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [opError, setOpError] = useState<string | null>(null);
 
   // AI Generation State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -30,11 +31,13 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
   }, [settings]);
 
   const handleEditProduct = (product: Product) => {
+    setOpError(null);
     setCurrentProduct(product);
     setIsEditing(true);
   };
 
   const handleAddProduct = () => {
+    setOpError(null);
     setCurrentProduct({
       title: '',
       description: '',
@@ -45,11 +48,23 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
     setIsEditing(true);
   };
 
+  const handleError = (error: any, action: string) => {
+    console.error(`Error ${action}:`, error);
+    if (error.code === 'permission-denied') {
+      setOpError("Permission refusée ! Puisque vous utilisez une connexion locale, vous devez régler les règles Firestore sur 'public' dans la console Firebase (allow read, write: if true;).");
+      alert("ERREUR PERMISSION : Impossible de sauvegarder. Vérifiez vos règles Firestore.");
+    } else {
+      setOpError(`Erreur lors de l'action: ${error.message}`);
+      alert("Une erreur est survenue.");
+    }
+  };
+
   const handleGenerateImage = async () => {
     const prompt = window.prompt("Décrivez l'image que vous souhaitez générer (ex: 'Un panneau de contrôle futuriste néon bleu') :");
     if (!prompt) return;
 
     setIsGenerating(true);
+    setOpError(null);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
@@ -86,8 +101,7 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
       setCurrentProduct(prev => ({ ...prev, imageUrl: url }));
 
     } catch (error: any) {
-      console.error("Erreur de génération:", error);
-      alert("Erreur lors de la génération de l'image: " + (error.message || "Erreur inconnue"));
+      handleError(error, "generating image");
     } finally {
       setIsGenerating(false);
     }
@@ -96,6 +110,7 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentProduct.title || !currentProduct.price) return;
+    setOpError(null);
 
     try {
       if (currentProduct.id) {
@@ -113,9 +128,8 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
       }
       setIsEditing(false);
       fetchData();
-    } catch (error) {
-      console.error("Error saving product: ", error);
-      alert("Erreur lors de la sauvegarde");
+    } catch (error: any) {
+      handleError(error, "saving product");
     }
   };
 
@@ -124,8 +138,8 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
       try {
         await deleteDoc(doc(db, 'products', id));
         fetchData();
-      } catch (error) {
-        console.error("Error deleting product: ", error);
+      } catch (error: any) {
+        handleError(error, "deleting product");
       }
     }
   };
@@ -133,13 +147,13 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingSettings(true);
+    setOpError(null);
     try {
       await setDoc(doc(db, 'settings', 'config'), localSettings);
       fetchData();
       alert("Paramètres sauvegardés !");
-    } catch (error) {
-      console.error("Error saving settings: ", error);
-      alert("Erreur lors de la sauvegarde des paramètres");
+    } catch (error: any) {
+      handleError(error, "saving settings");
     } finally {
       setSavingSettings(false);
     }
@@ -168,6 +182,13 @@ export const Admin: React.FC<AdminProps> = ({ products, settings, fetchData }) =
           </button>
         </div>
       </div>
+
+      {opError && (
+        <div className="bg-red-900/40 border border-red-700 text-red-200 p-4 mb-6 rounded-lg flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>{opError}</p>
+        </div>
+      )}
 
       {activeTab === 'products' && (
         <>
