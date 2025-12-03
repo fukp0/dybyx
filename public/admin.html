@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin JS</title>
+    <style>
+        /* (Même CSS que index.html pour la cohérence + ajouts admin) */
+        body { font-family: system-ui; padding: 20px; background: #f3f4f6; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .preview { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; background: #eee; }
+        .info { flex-grow: 1; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-del { background: #ef4444; color: white; }
+        .login-box { max-width: 300px; margin: 100px auto; background: white; padding: 20px; border-radius: 8px; text-align: center; }
+        input { padding: 10px; width: 80%; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loginSection" class="login-box">
+        <h2>Admin</h2>
+        <input type="password" id="passwordInput" placeholder="Mot de passe">
+        <button class="btn" onclick="login()" style="background:#4F46E5; color:white;">Entrer</button>
+    </div>
+
+    <div id="dashboardSection" class="container" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h1>Fichiers Uploadés</h1>
+            <a href="/" class="btn" style="background:#eee; text-decoration:none; color:#333;">Voir le site</a>
+        </div>
+        <div id="fileList">Chargement...</div>
+    </div>
+
+    <script>
+        const API_URL = location.origin; // détecte automatiquement l'url
+
+        async function login() {
+            const pass = document.getElementById('passwordInput').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pass })
+            });
+            const data = await res.json();
+            if(data.success) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('dashboardSection').style.display = 'block';
+                loadFiles();
+            } else {
+                alert("Erreur mot de passe");
+            }
+        }
+
+        async function loadFiles() {
+            const res = await fetch('/api/files');
+            const files = await res.json();
+            const list = document.getElementById('fileList');
+            
+            if(files.length === 0) { list.innerHTML = "Aucun fichier."; return; }
+
+            list.innerHTML = files.map(f => {
+                let preview = `<div class="preview" style="display:flex;align-items:center;justify-content:center;">📄</div>`;
+                if(f.type === 'image') preview = `<img src="${f.url}" class="preview">`;
+                if(f.type === 'video') preview = `<video src="${f.url}" class="preview"></video>`;
+
+                return `
+                <div class="card" id="card-${f.name}">
+                    ${preview}
+                    <div class="info">
+                        <strong>${f.name}</strong><br>
+                        <small>${f.size} - ${new Date(f.date).toLocaleDateString()}</small>
+                    </div>
+                    <a href="${f.url}" target="_blank" class="btn" style="background:#4F46E5; color:white; text-decoration:none;">Voir</a>
+                    <button class="btn btn-del" onclick="deleteFile('${f.name}')">Suppr</button>
+                </div>`;
+            }).join('');
+        }
+
+        async function deleteFile(name) {
+            if(!confirm("Supprimer ?")) return;
+            const res = await fetch(`/api/files/${name}`, { method: 'DELETE' });
+            if(res.ok) {
+                document.getElementById(`card-${name}`).remove();
+            } else {
+                alert("Erreur suppression");
+            }
+        }
+    </script>
+</body>
+</html>
