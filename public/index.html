@@ -3,192 +3,544 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Média Converter & Host (Node.js)</title>
+    <title>CLOUDMEDIA MEDIA | DYBYX URL</title>
     <style>
         :root {
-            --bg-color: #f3f4f6;
+            --bg-color: #f8fafc;
             --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --accent: #4F46E5;
-            --accent-hover: #4338ca;
-            --border: #e5e7eb;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #7c3aed;
+            --accent-hover: #6d28d9;
+            --accent-light: #a78bfa;
+            --border: #e2e8f0;
             --success: #10b981;
             --error: #ef4444;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --gradient: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.2);
         }
 
         [data-theme="dark"] {
-            --bg-color: #111827;
-            --card-bg: #1f2937;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --border: #374151;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #8b5cf6;
+            --accent-hover: #7c3aed;
+            --accent-light: #a78bfa;
+            --border: #334155;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-color);
             color: var(--text-main);
-            margin: 0;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
             padding: 20px;
-            transition: background 0.3s, color 0.3s;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        /* Header (Boutons haut droite) */
+        /* Background decoration */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+            background: radial-gradient(circle at 20% 80%, var(--accent) 0%, transparent 40%),
+                        radial-gradient(circle at 80% 20%, var(--accent-light) 0%, transparent 40%);
+        }
+
+        /* Header */
         .top-nav {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+            position: fixed;
+            top: 25px;
+            right: 25px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            z-index: 100;
         }
 
         .btn-icon {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
             color: var(--text-main);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             text-decoration: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .btn-icon:hover { transform: scale(1.1); }
+        .btn-icon:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 20px -10px var(--accent);
+        }
 
-        /* Carte Principale */
+        /* Main Card */
         .main-card {
-            background: var(--card-bg);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
             width: 100%;
-            max-width: 480px;
-            padding: 2.5rem;
-            border-radius: 1.5rem;
+            max-width: 520px;
+            padding: 3rem;
+            border-radius: 24px;
             box-shadow: var(--shadow);
             text-align: center;
-            border: 1px solid var(--border);
+            animation: cardAppear 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        h1 { margin: 0 0 0.5rem 0; font-size: 1.8rem; background: linear-gradient(45deg, var(--accent), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p.subtitle { color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
 
-        /* Zone de Drop */
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: var(--gradient);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 0 0 12px 0;
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Drop Zone */
         .drop-zone {
             border: 2px dashed var(--border);
-            border-radius: 1rem;
-            padding: 2rem;
+            border-radius: 20px;
+            padding: 3rem 2rem;
             cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(128, 128, 128, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(124, 58, 237, 0.02);
+            position: relative;
+            overflow: hidden;
         }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.1), transparent);
+            transition: 0.5s;
+        }
+
+        .drop-zone:hover::before {
+            left: 100%;
+        }
+
         .drop-zone:hover, .drop-zone.dragover {
             border-color: var(--accent);
-            background: rgba(79, 70, 229, 0.05);
-            transform: scale(1.02);
+            background: rgba(124, 58, 237, 0.05);
+            transform: translateY(-5px);
         }
-        .drop-content svg { width: 50px; height: 50px; color: var(--accent); margin-bottom: 10px; }
-        .drop-content p { margin: 0; font-weight: 500; }
-        .file-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); display: none; }
 
-        /* Bouton Upload */
-        .btn-primary {
-            margin-top: 1.5rem;
-            width: 100%;
+        .drop-zone.dragover {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { border-color: var(--accent); }
+            50% { border-color: var(--accent-light); }
+        }
+
+        .drop-content svg {
+            width: 64px;
+            height: 64px;
+            color: var(--accent);
+            margin-bottom: 16px;
+            transition: transform 0.3s;
+        }
+
+        .drop-zone:hover .drop-content svg {
+            transform: translateY(-5px);
+        }
+
+        .file-info {
+            margin-top: 16px;
             padding: 12px;
-            background: var(--accent);
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Upload Button */
+        .btn-primary {
+            margin-top: 2rem;
+            width: 100%;
+            padding: 16px;
+            background: var(--gradient);
             color: white;
             border: none;
-            border-radius: 0.75rem;
-            font-size: 1rem;
+            border-radius: 14px;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; }
 
-        /* Barre de progression */
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px -20px var(--accent);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Progress Bar */
         .progress-wrapper {
-            margin-top: 20px;
+            margin-top: 24px;
             background: var(--border);
-            height: 8px;
-            border-radius: 4px;
+            height: 6px;
+            border-radius: 3px;
             overflow: hidden;
             display: none;
         }
+
         .progress-fill {
             height: 100%;
-            background: var(--success);
+            background: var(--gradient);
             width: 0%;
-            transition: width 0.2s linear;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Résultat */
-        #resultArea { margin-top: 2rem; display: none; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Result Area */
+        #resultArea {
+            margin-top: 2.5rem;
+            display: none;
+            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         .result-box {
-            background: var(--bg-color);
-            padding: 1rem;
-            border-radius: 0.75rem;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 18px;
             border: 1px solid var(--border);
             text-align: left;
+            position: relative;
+            overflow: hidden;
         }
-        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .status-badge { background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-        .url-box { 
-            display: flex; gap: 10px; background: var(--card-bg); 
-            padding: 8px; border-radius: 6px; border: 1px solid var(--border);
-            align-items: center;
-        }
-        .url-text { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; color: var(--accent); }
-        .copy-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); }
-        .copy-btn:hover { color: var(--accent); }
 
-        .preview-media { width: 100%; border-radius: 8px; margin-top: 15px; max-height: 250px; object-fit: contain; background: black; }
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .status-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge::before {
+            content: '✓';
+            font-size: 12px;
+        }
+
+        .url-box {
+            display: flex;
+            gap: 12px;
+            background: var(--bg-color);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            align-items: center;
+            transition: border-color 0.3s;
+        }
+
+        .url-box:hover {
+            border-color: var(--accent);
+        }
+
+        .url-text {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            color: var(--accent);
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .copy-btn {
+            background: var(--gradient);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .copy-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px -5px var(--accent);
+        }
+
+        .preview-media {
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 20px;
+            max-height: 300px;
+            object-fit: contain;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+        }
 
         /* Toast Notification */
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(50px); background: #333; color: white; padding: 10px 20px; border-radius: 50px; opacity: 0; transition: 0.3s; pointer-events: none; }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--gradient);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 14px;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 20px 40px -20px var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        /* Erreur */
-        .error-msg { color: var(--error); margin-top: 10px; font-size: 0.9rem; display: none; }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Error Message */
+        .error-msg {
+            color: var(--error);
+            margin-top: 16px;
+            font-size: 0.9rem;
+            display: none;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 12px;
+            border-left: 4px solid var(--error);
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* MEGA Info */
+        .mega-info {
+            margin-top: 1rem;
+            padding: 12px;
+            background: rgba(124, 58, 237, 0.05);
+            border-radius: 12px;
+            border: 1px solid var(--accent-light);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: left;
+        }
+
+        .mega-info svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            color: var(--accent);
+            vertical-align: middle;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .main-card {
+                padding: 2rem;
+                border-radius: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .top-nav {
+                top: 20px;
+                right: 20px;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="bg-decoration"></div>
 
-    <!-- Navigation -->
     <div class="top-nav">
-        <!-- Lien vers Admin HTML (Node.js) -->
         <a href="admin.html" class="btn-icon" title="Administration">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path>
+            </svg>
         </a>
         <button class="btn-icon" onclick="toggleTheme()" title="Changer Thème">
-            <svg id="themeIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            <svg id="themeIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
         </button>
     </div>
 
-    <!-- Interface Principale -->
     <div class="main-card">
+        <div class="logo">DYBY</div>
         <h1>Cloud Média JS</h1>
-        <p class="subtitle">Hébergez vos images, vidéos et audios</p>
+        <p class="subtitle">Hébergez vos médias</p>
 
         <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
             <div class="drop-content">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <p>Cliquez ou glissez un fichier</p>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p style="font-weight: 600; margin-bottom: 8px;">Glissez votre fichier ici</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Tous types de fichiers • Max 100MB (limite )</p>
                 <div class="file-info" id="fileInfo"></div>
             </div>
             <input type="file" id="fileInput" name="file" hidden>
@@ -200,29 +552,58 @@
 
         <div class="error-msg" id="errorMsg"></div>
 
-        <button class="btn-primary" id="uploadBtn" onclick="uploadFile()">Générer le lien</button>
+        <button class="btn-primary" id="uploadBtn" onclick="uploadFile()">
+            <span id="btnText">Upload</span>
+            <svg id="btnIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 8px;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </button>
 
-        <!-- Zone Résultat -->
+        <div class="mega-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <strong>Stockage :</strong> 20GB gratuit, chiffré de bout en bout. Les fichiers sont uploadés sur votre compte Dybyx personnel.
+        </div>
+
         <div id="resultArea">
             <div class="result-box">
                 <div class="result-header">
-                    <span class="status-badge">Succès</span>
+                    <span class="status-badge">Upload réussi </span>
                 </div>
                 <div class="url-box">
-                    <div class="url-text" id="urlText">https://...</div>
+                    <div class="url-text" id="urlText">https://mega.nz/...</div>
                     <button class="copy-btn" onclick="copyResult()" title="Copier">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
                     </button>
                 </div>
                 <div id="mediaPreview"></div>
+                <div style="margin-top: 15px; font-size: 0.85rem; color: var(--text-muted);">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Ce lien est valide indéfiniment.
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="toast" id="toast">Lien copié !</div>
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Lien copié dans le presse-papier</span>
+    </div>
 
     <script>
-        // --- 1. Gestion du Thème ---
+        // 1. Theme Management
         function toggleTheme() {
             const html = document.documentElement;
             const current = html.getAttribute('data-theme');
@@ -235,9 +616,9 @@
         function updateThemeIcon(theme) {
             const icon = document.getElementById('themeIcon');
             if(theme === 'dark') {
-                icon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+                icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
             } else {
-                icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+                icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
             }
         }
 
@@ -246,17 +627,20 @@
             updateThemeIcon('dark');
         }
 
-        // --- 2. Gestion Drag & Drop et Fichier ---
+        // 2. Drag & Drop
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const fileInfo = document.getElementById('fileInfo');
         const errorMsg = document.getElementById('errorMsg');
         const resultArea = document.getElementById('resultArea');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
 
         ['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, (evt) => {
             evt.preventDefault();
             dropZone.classList.add('dragover');
         }));
+        
         ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (evt) => {
             evt.preventDefault();
             dropZone.classList.remove('dragover');
@@ -271,8 +655,28 @@
             resultArea.style.display = 'none';
             document.getElementById('progressBar').style.width = '0%';
             
+            // Vérifier la taille du fichier (max 100MB pour MEGA free)
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            if (file.size > maxSize) {
+                showError(`Fichier trop volumineux (${(file.size/1024/1024).toFixed(2)} MB). Maximum: 100MB pour MEGA.`);
+                return;
+            }
+            
             fileInfo.style.display = 'block';
-            fileInfo.textContent = `Fichier : ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
+            fileInfo.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                    </svg>
+                    <div>
+                        <div style="font-weight: 600;">${file.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            ${(file.size/1024/1024).toFixed(2)} MB • ${file.type || 'Type inconnu'}
+                        </div>
+                    </div>
+                </div>
+            `;
             
             if (fileInput.files[0] !== file) {
                 const dt = new DataTransfer();
@@ -281,11 +685,18 @@
             }
         }
 
-        // --- 3. Upload vers Node.js ---
+        // 3. Upload Function (vers MEGA)
         function uploadFile() {
             const file = fileInput.files[0];
             if (!file) {
                 showError("Veuillez sélectionner un fichier.");
+                return;
+            }
+
+            // Vérifier à nouveau la taille côté client
+            const maxSize = 100 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showError(`Fichier trop volumineux (${(file.size/1024/1024).toFixed(2)} MB). Maximum: 100MB pour MEGA.`);
                 return;
             }
 
@@ -298,7 +709,8 @@
             const progressBar = document.getElementById('progressBar');
 
             btn.disabled = true;
-            btn.textContent = "Envoi en cours...";
+            btnText.textContent = "Envoi vers MEGA...";
+            btnIcon.style.display = 'none';
             progressWrapper.style.display = 'block';
             errorMsg.style.display = 'none';
             resultArea.style.display = 'none';
@@ -312,7 +724,8 @@
 
             xhr.onload = function() {
                 btn.disabled = false;
-                btn.textContent = "Générer le lien";
+                btnText.textContent = "Upload vers MEGA";
+                btnIcon.style.display = 'inline';
                 progressWrapper.style.display = 'none';
 
                 if (xhr.status === 200) {
@@ -321,17 +734,34 @@
                         if (data.success) {
                             showResult(data);
                         } else {
-                            showError(data.message);
+                            showError(data.message || "Erreur lors de l'upload vers MEGA");
                         }
                     } catch (e) {
-                        showError("Erreur réponse serveur.");
+                        console.error("Erreur parsing JSON:", e);
+                        showError("Réponse serveur invalide");
                     }
                 } else {
-                    showError("Erreur serveur (HTTP " + xhr.status + ")");
+                    showError("Erreur serveur (" + xhr.status + ")");
                 }
             };
 
-            // Modification importante pour Node.js : Route /upload
+            xhr.onerror = function() {
+                btn.disabled = false;
+                btnText.textContent = "Upload vers MEGA";
+                btnIcon.style.display = 'inline';
+                progressWrapper.style.display = 'none';
+                showError("Erreur de connexion au serveur. Vérifiez votre connexion internet.");
+            };
+
+            xhr.ontimeout = function() {
+                btn.disabled = false;
+                btnText.textContent = "Upload vers MEGA";
+                btnIcon.style.display = 'inline';
+                progressWrapper.style.display = 'none';
+                showError("Timeout: l'upload prend trop de temps. Essayez un fichier plus petit.");
+            };
+
+            xhr.timeout = 300000; // 5 minutes timeout
             xhr.open('POST', '/upload', true);
             xhr.send(formData);
         }
@@ -343,19 +773,43 @@
 
             urlText.textContent = data.url;
             
-            // Preview selon le type MIME renvoyé par Node.js
+            // Essayer d'afficher un aperçu si c'est une image, vidéo ou audio
             let html = '';
-            if(data.type.includes('image')) html = `<img src="${data.url}" class="preview-media">`;
-            else if(data.type.includes('video')) html = `<video src="${data.url}" controls class="preview-media"></video>`;
-            else if(data.type.includes('audio')) html = `<audio src="${data.url}" controls class="preview-media"></audio>`;
+            const url = data.url;
+            
+            if(data.type && data.type.includes('image')) {
+                html = `<img src="${url}" class="preview-media" alt="Preview" onerror="this.style.display='none'">`;
+            } else if(data.type && data.type.includes('video')) {
+                html = `<video src="${url}" controls class="preview-media" onerror="this.style.display='none'"></video>`;
+            } else if(data.type && data.type.includes('audio')) {
+                html = `<audio src="${url}" controls class="preview-media" onerror="this.style.display='none'"></audio>`;
+            } else {
+                html = `<div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                    </svg>
+                    <p style="margin-top: 10px;">Aperçu non disponible pour ce type de fichier</p>
+                    <p style="font-size: 0.9rem; margin-top: 5px;">Cliquez sur le lien pour télécharger</p>
+                </div>`;
+            }
             
             mediaPreview.innerHTML = html;
             resultArea.style.display = 'block';
+            
+            // Auto-scroll to result
+            setTimeout(() => {
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 300);
         }
 
         function showError(msg) {
-            errorMsg.textContent = "❌ " + msg;
+            errorMsg.textContent = msg;
             errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.animation = 'none';
+                setTimeout(() => errorMsg.style.animation = '', 10);
+            }, 500);
         }
 
         function copyResult() {
@@ -363,9 +817,39 @@
             navigator.clipboard.writeText(url).then(() => {
                 const toast = document.getElementById('toast');
                 toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 2000);
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }).catch(err => {
+                console.error('Erreur copie:', err);
+                // Fallback pour anciens navigateurs
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
             });
         }
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add floating animation to logo
+            const logo = document.querySelector('.logo');
+            logo.style.animation = 'cardAppear 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            // Test la connexion au serveur
+            fetch('/api/test')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Serveur MEGA connecté:', data);
+                })
+                .catch(err => {
+                    console.warn('Serveur non accessible:', err);
+                });
+        });
     </script>
 </body>
-  </html>
+    </html>
