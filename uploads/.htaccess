@@ -1,9 +1,0 @@
-# uploads/.htaccess
-# Empêche l'exécution de scripts PHP dans ce dossier
-<FilesMatch "\.(php|php5|phtml)$">
-    Order Deny,Allow
-    Deny from all
-</FilesMatch>
-# Désactive le moteur de script pour être sûr
-Options -ExecCGI
-RemoveHandler .php .phtml .php3 .pl .py .jsp .asp .sh .cgi
