@@ -3,106 +3,126 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
-const mega = require('megajs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- CONFIGURATION MEGA ---
-// RÉGLEZ CES VARIABLES AVANT DE DÉMARRER !
-const MEGA_EMAIL = process.env.MEGA_EMAIL || "tizergameht@gmail.com";
-const MEGA_PASSWORD = process.env.MEGA_PASSWORD || "mike12&&";
-const MEGA_FOLDER = process.env.MEGA_FOLDER || "CloudMedia";
-
 // --- CONFIGURATION ---
-const ADMIN_PASSWORD = "mike12&&";
-const TEMP_DIR = './temp_uploads';
+const ADMIN_PASSWORD = "admin123";
+const UPLOAD_DIR = './uploads';
 
 // --- MIDDLEWARES ---
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app. use(cors({
+    origin: '*', // Permet tous les domaines
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: false
+}));
+
+// Headers pour compatibilité maximale
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+    res. header('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    
+    // Pour les images dans <img>, <video>, etc.
+    if (req.path.startsWith('/uploads/')) {
+        res.header('Cache-Control', 'public, max-age=31536000'); // Cache 1 an
+        res.header('Content-Disposition', 'inline'); // Affichage direct
+    }
+    
+    next();
+});
+
+app.use(express. json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+
+// Servir les fichiers uploadés avec headers optimisés
+app.use('/uploads', (req, res, next) => {
+    // Headers pour compatibilité maximale
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.header('Content-Type', 'application/octet-stream');
+    
+    // Détecter le type de fichier
+    const ext = path.extname(req.path).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '. gif', '.webp', '.bmp'].includes(ext)) {
+        res.header('Content-Type', `image/${ext. slice(1) === 'jpg' ? 'jpeg' : ext.slice(1)}`);
+    } else if (['.mp4', '.webm', '.mov', '.avi']. includes(ext)) {
+        res.header('Content-Type', `video/${ext.slice(1)}`);
+    } else if (['.mp3', '.wav', '.ogg'].includes(ext)) {
+        res.header('Content-Type', `audio/${ext.slice(1)}`);
+    } else if (ext === '.svg') {
+        res.header('Content-Type', 'image/svg+xml');
+    }
+    
+    next();
+}, express.static(UPLOAD_DIR));
+
+app.use(express.static('public')); // Servir le frontend
 
 // --- INITIALISATION ---
-if (!fs.existsSync(TEMP_DIR)) {
-    fs.mkdirSync(TEMP_DIR, { recursive: true });
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    console.log(`📁 Dossier upload créé: ${UPLOAD_DIR}`);
 }
 
-// --- CONFIGURATION UPLOAD TEMPORAIRE ---
+// --- CONFIGURATION UPLOAD LOCAL ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, TEMP_DIR);
+        cb(null, UPLOAD_DIR);
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const extension = path.extname(file.originalname);
-        const baseName = path.basename(file.originalname, extension)
-            .replace(/[^a-zA-Z0-9]/g, '_')
-            .substring(0, 50);
-        cb(null, baseName + '_' + uniqueSuffix + extension);
+        // Nom de fichier unique
+        const timestamp = Date.now();
+        const randomString = Math.random(). toString(36).substring(2, 15);
+        const originalName = path.parse(file.originalname).name;
+        const extension = path. extname(file.originalname) || '.bin';
+        
+        // Nettoyer le nom
+        const safeName = originalName
+            .replace(/[^a-zA-Z0-9-_]/g, '_')
+            .substring(0, 100);
+        
+        const uniqueFilename = `${safeName}_${timestamp}_${randomString}${extension}`;
+        cb(null, uniqueFilename);
     }
 });
 
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 100 * 1024 * 1024 // 100MB max pour MEGA free
+        fileSize: 2 * 1024 * 1024 * 1024, // 2GB max
+        fieldSize: 10 * 1024 * 1024 // 10MB pour les champs
+    },
+    fileFilter: (req, file, cb) => {
+        // Accepter tous les fichiers
+        cb(null, true);
     }
 });
 
-// ================= ROUTES MEGA =================
+// ================= ROUTES SIMPLES =================
 
-// Fonction pour se connecter à MEGA avec gestion d'erreurs améliorée
-async function connectToMega() {
-    return new Promise((resolve, reject) => {
-        console.log('🔐 Tentative de connexion à MEGA...');
-        
-        try {
-            const storage = new mega.Storage({
-                email: MEGA_EMAIL,
-                password: MEGA_PASSWORD,
-                autologin: false,
-                autoload: false
-            }, (err) => {
-                if (err) {
-                    console.error('❌ Erreur connexion MEGA:', err.message);
-                    reject(new Error(`Erreur connexion MEGA: ${err.message}`));
-                } else {
-                    console.log('✅ Connecté à MEGA avec succès');
-                    
-                    // Charger les données du compte
-                    storage.on('ready', () => {
-                        console.log('📦 Stockage MEGA prêt');
-                        resolve(storage);
-                    });
-                    
-                    storage.on('error', (err) => {
-                        console.error('❌ Erreur stockage MEGA:', err.message);
-                        reject(err);
-                    });
-                    
-                    // Forcer le chargement
-                    storage.load((loadErr) => {
-                        if (loadErr) {
-                            console.error('❌ Erreur chargement MEGA:', loadErr.message);
-                            reject(loadErr);
-                        }
-                    });
-                }
-            });
-        } catch (error) {
-            console.error('❌ Exception connexion MEGA:', error.message);
-            reject(error);
-        }
+// Route de santé
+app.get('/api/health', (req, res) => {
+    res.json({
+        success: true,
+        status: 'running',
+        storage: 'local',
+        uploadDir: UPLOAD_DIR,
+        maxFileSize: '2GB',
+        cors: 'enabled',
+        crossOrigin: 'compatible'
     });
-}
+});
 
-// Route d'upload vers MEGA avec plus de logs
-app.post('/upload', upload.single('file'), async (req, res) => {
-    console.log('📤 Début upload route');
-    
+// Route UPLOAD (LOCAL) - Compatible tous navigateurs/projets
+app.post('/upload', upload.single('file'), (req, res) => {
     try {
+        console.log('📤 Upload demandé.. .');
+        
         if (!req.file) {
             console.log('❌ Aucun fichier reçu');
             return res.status(400).json({ 
@@ -111,276 +131,165 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             });
         }
 
-        console.log(`📤 Fichier reçu: ${req.file.originalname} (${(req.file.size / 1024 / 1024).toFixed(2)} MB)`);
-        console.log(`📁 Chemin temporaire: ${req.file.path}`);
+        console.log(`✅ Fichier reçu: ${req.file. originalname} (${(req.file.size / 1024 / 1024).toFixed(2)} MB)`);
+        console.log(`📁 Sauvegardé comme: ${req.file.filename}`);
 
-        // Vérifier si le fichier temporaire existe
-        if (!fs.existsSync(req.file.path)) {
-            console.log('❌ Fichier temporaire introuvable');
-            return res.status(500).json({ 
-                success: false, 
-                message: "Erreur interne: fichier temporaire perdu" 
-            });
-        }
+        // Construire l'URL complète compatible
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+        const host = req.get('host');
+        const url = `${protocol}://${host}/uploads/${req.file.filename}`;
 
-        // Se connecter à MEGA
-        console.log('🔗 Connexion à MEGA...');
-        let storage;
-        try {
-            storage = await connectToMega();
-        } catch (error) {
-            console.error('❌ Échec connexion MEGA:', error.message);
-            
-            // Nettoyer le fichier temporaire
-            if (fs.existsSync(req.file.path)) {
-                fs.unlinkSync(req.file.path);
-            }
-            
-            return res.status(500).json({ 
-                success: false, 
-                message: `Erreur connexion MEGA: ${error.message}. Vérifiez vos identifiants.` 
-            });
-        }
+        console.log(`🔗 URL générée: ${url}`);
 
-        // Trouver ou créer le dossier
-        console.log(`📂 Recherche du dossier: ${MEGA_FOLDER}`);
-        let folder;
-        
-        try {
-            // Chercher le dossier existant
-            folder = storage.root.children.find(child => 
-                child && child.name === MEGA_FOLDER && child.directory
-            );
-            
-            if (!folder) {
-                console.log(`📂 Création du dossier: ${MEGA_FOLDER}`);
-                folder = await storage.mkdir(MEGA_FOLDER);
-                console.log(`✅ Dossier créé: ${MEGA_FOLDER}`);
-            } else {
-                console.log(`✅ Dossier trouvé: ${MEGA_FOLDER}`);
-            }
-        } catch (error) {
-            console.error('❌ Erreur dossier MEGA:', error.message);
-            
-            // Nettoyer
-            if (fs.existsSync(req.file.path)) {
-                fs.unlinkSync(req.file.path);
-            }
-            
-            return res.status(500).json({ 
-                success: false, 
-                message: `Erreur gestion dossier MEGA: ${error.message}` 
-            });
-        }
-
-        // Lire le fichier temporaire
-        console.log('📖 Lecture du fichier temporaire...');
-        let fileBuffer;
-        try {
-            fileBuffer = fs.readFileSync(req.file.path);
-            console.log(`✅ Fichier lu: ${fileBuffer.length} bytes`);
-        } catch (error) {
-            console.error('❌ Erreur lecture fichier:', error.message);
-            return res.status(500).json({ 
-                success: false, 
-                message: `Erreur lecture fichier: ${error.message}` 
-            });
-        }
-
-        // Uploader vers MEGA
-        console.log('⬆️ Upload vers MEGA...');
-        let megaFile;
-        try {
-            megaFile = await folder.upload(req.file.originalname, fileBuffer, {
-                attributes: {
-                    originalName: req.file.originalname,
-                    size: req.file.size.toString(),
-                    uploadedAt: new Date().toISOString(),
-                    mimetype: req.file.mimetype
-                }
-            });
-            console.log(`✅ Fichier uploadé sur MEGA: ${megaFile.name}`);
-        } catch (error) {
-            console.error('❌ Erreur upload MEGA:', error.message);
-            
-            // Nettoyer
-            if (fs.existsSync(req.file.path)) {
-                fs.unlinkSync(req.file.path);
-            }
-            
-            return res.status(500).json({ 
-                success: false, 
-                message: `Erreur upload MEGA: ${error.message}` 
-            });
-        }
-
-        // Générer le lien de téléchargement
-        console.log('🔗 Génération du lien...');
-        let link;
-        try {
-            link = await megaFile.link();
-            console.log(`✅ Lien généré: ${link}`);
-        } catch (error) {
-            console.error('❌ Erreur génération lien:', error.message);
-            
-            // On a quand même le fichier, on peut retourner un succès partiel
-            link = `Fichier uploadé mais erreur lien: ${error.message}`;
-        }
-
-        // Supprimer le fichier temporaire
-        try {
-            fs.unlinkSync(req.file.path);
-            console.log('🗑️ Fichier temporaire supprimé');
-        } catch (error) {
-            console.warn('⚠️ Impossible de supprimer le fichier temporaire:', error.message);
-        }
-
-        console.log('✅ Upload terminé avec succès!');
-
+        // Réponse avec toutes les infos nécessaires
         res.json({
             success: true,
-            url: link,
-            type: req.file.mimetype,
+            url: url,
+            directUrl: url, // Même URL pour compatibilité
+            publicUrl: url, // URL publique
+            cdnUrl: url,    // Compatible CDN
+            embedUrl: url,  // Pour embed
+            type: req.file. mimetype || 'application/octet-stream',
             filename: req.file.originalname,
+            savedAs: req.file. filename,
             size: req.file.size,
             sizeMB: (req.file.size / 1024 / 1024).toFixed(2),
-            message: "✅ Upload réussi sur MEGA !"
-        });
-
-    } catch (error) {
-        console.error('💥 ERREUR GÉNÉRALE:', error);
-        console.error('Stack trace:', error.stack);
-        
-        // Nettoyer le fichier temporaire en cas d'erreur
-        if (req.file && fs.existsSync(req.file.path)) {
-            try {
-                fs.unlinkSync(req.file.path);
-            } catch (unlinkError) {
-                console.error('Erreur nettoyage:', unlinkError.message);
+            message: "✅ Upload réussi !",
+            timestamp: new Date().toISOString(),
+            // Infos pour développeurs
+            usage: {
+                html: `<img src="${url}" alt="${req.file.originalname}">`,
+                css: `background-image: url('${url}');`,
+                markdown: `![${req.file.originalname}](${url})`,
+                direct: url
             }
-        }
-        
-        res.status(500).json({ 
-            success: false, 
-            message: `Erreur serveur: ${error.message}`,
-            errorDetails: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
-    }
-});
-
-// Route pour lister les fichiers MEGA (simplifiée)
-app.get('/api/files', async (req, res) => {
-    console.log('📁 Liste fichiers demandée');
-    
-    try {
-        const storage = await connectToMega();
-        
-        // Trouver le dossier
-        let folder = storage.root.children.find(child => 
-            child && child.name === MEGA_FOLDER && child.directory
-        );
-
-        if (!folder) {
-            console.log('📁 Dossier non trouvé, retour liste vide');
-            return res.json({
-                success: true,
-                files: [],
-                message: "Aucun dossier trouvé, premier upload créera le dossier"
-            });
-        }
-
-        // Charger les fichiers du dossier
-        console.log('🔄 Chargement des fichiers...');
-        await folder.loadChildren();
-        
-        console.log(`📊 ${folder.children.length} éléments trouvés`);
-        
-        const fileList = folder.children
-            .filter(child => child && !child.directory) // Filtrer seulement les fichiers
-            .map(file => {
-                const extension = path.extname(file.name).toLowerCase();
-                let type = 'other';
-                
-                if(['.jpg','.jpeg','.png','.gif','.webp'].includes(extension)) type = 'image';
-                else if(['.mp4','.webm','.mov','.avi','.mkv'].includes(extension)) type = 'video';
-                else if(['.mp3','.wav','.ogg'].includes(extension)) type = 'audio';
-                else if(['.pdf','.doc','.docx','.txt','.zip'].includes(extension)) type = 'document';
-                
-                return {
-                    name: file.name,
-                    size: file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : '0 MB',
-                    date: file.timestamp || new Date(),
-                    type: type
-                };
-            })
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        console.log(`✅ ${fileList.length} fichiers retournés`);
-
-        res.json({
-            success: true,
-            files: fileList,
-            total: fileList.length,
-            folder: MEGA_FOLDER
         });
 
     } catch (error) {
-        console.error('❌ Erreur liste fichiers MEGA:', error.message);
+        console.error('❌ Erreur upload:', error);
         res.status(500).json({ 
             success: false, 
-            message: "Erreur lors de la récupération des fichiers",
-            error: error.message
+            message: `Erreur upload: ${error.message}` 
         });
     }
 });
 
-// Route pour supprimer un fichier MEGA (simplifiée)
-app.delete('/api/files/:filename', async (req, res) => {
-    const filename = req.params.filename;
-    console.log(`🗑️ Demande suppression: ${filename}`);
-    
+// Route pour lister les fichiers (pour admin)
+app.get('/api/files', (req, res) => {
     try {
-        const storage = await connectToMega();
+        console.log('📁 Liste fichiers demandée');
         
-        // Trouver le dossier
-        let folder = storage.root.children.find(child => 
-            child && child.name === MEGA_FOLDER && child.directory
-        );
+        fs.readdir(UPLOAD_DIR, (err, files) => {
+            if (err) {
+                console.error('❌ Erreur lecture dossier:', err);
+                return res. status(500).json({ 
+                    success: false,
+                    error: "Erreur lecture dossier" 
+                });
+            }
 
-        if (!folder) {
+            console.log(`📊 ${files.length} fichiers trouvés`);
+            
+            // Exclure les fichiers système
+            const validFiles = files.filter(file => 
+                !file.startsWith('.') && 
+                !['.gitkeep', '.gitignore', '.DS_Store'].includes(file)
+            );
+
+            const fileList = validFiles.map(file => {
+                try {
+                    const filePath = path.join(UPLOAD_DIR, file);
+                    const stats = fs.statSync(filePath);
+                    const extension = path.extname(file).toLowerCase();
+                    
+                    // Déterminer le type
+                    let type = 'other';
+                    if(['.jpg','.jpeg','.png','.gif','.webp','.bmp','.svg']. includes(extension)) type = 'image';
+                    else if(['.mp4','.webm','. mov','.avi','.mkv','.flv']. includes(extension)) type = 'video';
+                    else if(['.mp3','.wav','.ogg','.m4a','.flac'].includes(extension)) type = 'audio';
+                    else if(['.pdf','.doc','. docx','.txt','.rtf'].includes(extension)) type = 'document';
+                    else if(['.zip','. rar','.7z','.tar','.gz'].includes(extension)) type = 'archive';
+                    
+                    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+                    const host = req.get('host');
+                    const url = `${protocol}://${host}/uploads/${file}`;
+                    
+                    return {
+                        name: file,
+                        originalName: file,
+                        url: url,
+                        directUrl: url,
+                        publicUrl: url,
+                        downloadUrl: url,
+                        size: (stats.size / 1024 / 1024).toFixed(2) + ' MB',
+                        sizeBytes: stats.size,
+                        date: stats.mtime,
+                        lastModified: stats.mtime,
+                        type: type,
+                        contentType: 'application/octet-stream',
+                        extension: extension,
+                        usage: {
+                            html: `<img src="${url}" alt="${file}">`,
+                            css: `background-image: url('${url}');`,
+                            markdown: `![${file}](${url})`
+                        }
+                    };
+                } catch (e) {
+                    console.error(`⚠️ Erreur stats pour ${file}:`, e.message);
+                    return null;
+                }
+            }).filter(f => f !== null)
+              .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            console.log(`✅ ${fileList.length} fichiers traités`);
+            
+            res.json({
+                success: true,
+                files: fileList,
+                total: fileList.length,
+                uploadDir: UPLOAD_DIR,
+                timestamp: new Date().toISOString()
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur liste fichiers:', error);
+        res.status(500).json({ 
+            success: false,
+            error: "Erreur lors de la récupération des fichiers"
+        });
+    }
+});
+
+// Route pour supprimer un fichier
+app.delete('/api/files/:filename', (req, res) => {
+    try {
+        const filename = decodeURIComponent(req.params.filename);
+        console.log(`🗑️ Suppression demandée: ${filename}`);
+        
+        // Sécurité: empêcher les chemins relatifs
+        const safeFilename = path.basename(filename);
+        const filePath = path.join(UPLOAD_DIR, safeFilename);
+        
+        if (!fs.existsSync(filePath)) {
+            console.log(`❌ Fichier non trouvé: ${safeFilename}`);
             return res.status(404).json({ 
                 success: false, 
-                message: "Dossier non trouvé" 
+                message: "Fichier introuvable" 
             });
         }
-
-        // Charger les fichiers
-        await folder.loadChildren();
         
-        // Trouver le fichier
-        const fileToDelete = folder.children.find(child => 
-            child && !child.directory && child.name === filename
-        );
-
-        if (!fileToDelete) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "Fichier non trouvé" 
-            });
-        }
-
-        // Supprimer le fichier
-        await fileToDelete.delete();
-        
-        console.log(`✅ Fichier supprimé de MEGA: ${filename}`);
+        fs.unlinkSync(filePath);
+        console.log(`✅ Fichier supprimé: ${safeFilename}`);
         
         res.json({ 
             success: true, 
-            message: "Fichier supprimé avec succès" 
+            message: "Fichier supprimé avec succès",
+            filename: safeFilename
         });
-
+        
     } catch (error) {
-        console.error('❌ Erreur suppression MEGA:', error.message);
+        console.error('❌ Erreur suppression:', error);
         res.status(500).json({ 
             success: false, 
             message: `Erreur lors de la suppression: ${error.message}` 
@@ -388,26 +297,52 @@ app.delete('/api/files/:filename', async (req, res) => {
     }
 });
 
-// Route pour obtenir les statistiques MEGA (simplifiée)
-app.get('/api/stats', async (req, res) => {
-    console.log('📊 Statistiques demandées');
-    
+// Route pour les statistiques
+app.get('/api/stats', (req, res) => {
     try {
-        const storage = await connectToMega();
+        const files = fs.readdirSync(UPLOAD_DIR);
+        const validFiles = files.filter(file => 
+            !file.startsWith('.') && 
+            !['.gitkeep', '.gitignore', '.DS_Store'].includes(file)
+        );
+        
+        let totalSize = 0;
+        const typeCount = { image: 0, video: 0, audio: 0, document: 0, other: 0 };
+        
+        validFiles.forEach(file => {
+            try {
+                const filePath = path.join(UPLOAD_DIR, file);
+                const stats = fs. statSync(filePath);
+                totalSize += stats.size;
+                
+                const extension = path.extname(file).toLowerCase();
+                if(['.jpg','. jpeg','.png','.gif','.webp'].includes(extension)) typeCount.image++;
+                else if(['. mp4','.webm','.mov','.avi']. includes(extension)) typeCount.video++;
+                else if(['.mp3','.wav','.ogg']. includes(extension)) typeCount.audio++;
+                else if(['. pdf','.doc','.docx','. txt'].includes(extension)) typeCount.document++;
+                else typeCount. other++;
+            } catch (e) {
+                // Ignorer les erreurs sur un fichier
+            }
+        });
         
         res.json({
             success: true,
-            storage: "MEGA Cloud",
-            account: MEGA_EMAIL.substring(0, 3) + '***' + MEGA_EMAIL.substring(MEGA_EMAIL.indexOf('@')),
-            folder: MEGA_FOLDER,
-            note: "Les statistiques détaillées ne sont pas disponibles via l'API publique MEGA"
+            stats: {
+                totalFiles: validFiles.length,
+                totalSize: (totalSize / 1024 / 1024).toFixed(2) + ' MB',
+                storageUsed: (totalSize / 1024 / 1024).toFixed(2) + ' MB',
+                byType: typeCount
+            },
+            uploadDir: UPLOAD_DIR,
+            timestamp: new Date().toISOString()
         });
         
     } catch (error) {
-        console.error('❌ Erreur statistiques:', error.message);
+        console.error('❌ Erreur statistiques:', error);
         res.status(500).json({ 
-            success: false, 
-            message: "Erreur statistiques" 
+            success: false,
+            error: "Erreur lors du calcul des statistiques" 
         });
     }
 });
@@ -432,84 +367,110 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// Route de test améliorée
-app.get('/api/test', async (req, res) => {
+// Route de test - Compatible cross-origin
+app. get('/api/test', (req, res) => {
     console.log('🧪 Test serveur demandé');
     
-    try {
-        // Tester la connexion MEGA
-        const storage = await connectToMega();
-        
-        res.json({
-            service: "Cloud Media MEGA",
-            status: "running",
-            storage: "MEGA.nz",
-            maxFileSize: "100MB",
-            mega: {
-                connected: true,
-                account: MEGA_EMAIL.substring(0, 3) + '***',
-                folder: MEGA_FOLDER
-            },
-            server: {
-                port: PORT,
-                tempDir: TEMP_DIR,
-                uptime: process.uptime()
-            },
-            endpoints: {
-                upload: "POST /upload",
-                listFiles: "GET /api/files",
-                deleteFile: "DELETE /api/files/:filename",
-                stats: "GET /api/stats",
-                login: "POST /api/login",
-                test: "GET /api/test"
-            }
-        });
-        
-    } catch (error) {
-        console.error('❌ Test échoué:', error.message);
-        res.status(500).json({
-            service: "Cloud Media MEGA",
-            status: "error",
-            error: error.message,
-            mega: {
-                connected: false,
-                error: "Connexion MEGA échouée"
-            },
-            note: "Vérifiez vos identifiants MEGA dans le fichier .env"
-        });
-    }
+    res.json({
+        service: "Cloud Media Local",
+        status: "running",
+        storage: "Local Disk",
+        maxFileSize: "2GB",
+        crossOrigin: "enabled",
+        cors: "all domains allowed",
+        server: {
+            port: PORT,
+            uploadDir: UPLOAD_DIR,
+            uptime: process.uptime()
+        },
+        compatibility: {
+            html: "✅ Compatible <img src=''> ",
+            css: "✅ Compatible background-image: url()",
+            iframe: "✅ Compatible <iframe src=''>",
+            embed: "✅ Compatible <embed src=''>",
+            video: "✅ Compatible <video src=''>",
+            audio: "✅ Compatible <audio src=''>",
+            ajax: "✅ Compatible fetch() et XMLHttpRequest",
+            cors: "✅ Tous domaines autorisés"
+        },
+        endpoints: {
+            upload: "POST /upload",
+            listFiles: "GET /api/files",
+            deleteFile: "DELETE /api/files/:filename",
+            stats: "GET /api/stats",
+            login: "POST /api/login",
+            test: "GET /api/test",
+            health: "GET /api/health"
+        }
+    });
 });
 
-// Nettoyage périodique des fichiers temporaires
-setInterval(() => {
-    if (fs.existsSync(TEMP_DIR)) {
-        fs.readdir(TEMP_DIR, (err, files) => {
-            if (err) {
-                console.error('❌ Erreur nettoyage temp:', err.message);
-                return;
-            }
-            
-            const now = Date.now();
-            files.forEach(file => {
-                const filePath = path.join(TEMP_DIR, file);
-                fs.stat(filePath, (err, stats) => {
-                    if (err) return;
-                    
-                    // Supprimer les fichiers temporaires vieux de plus d'1 heure
-                    if (now - stats.mtimeMs > 3600000) {
-                        fs.unlink(filePath, (err) => {
-                            if (!err) {
-                                console.log(`🧹 Fichier temporaire nettoyé: ${file}`);
-                            }
-                        });
-                    }
-                });
-            });
-        });
-    }
-}, 3600000); // Toutes les heures
+// Route racine
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cloud Media Server - Cross-Origin Compatible</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                .container { max-width: 800px; margin: 0 auto; }
+                .card { background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 10px 0; }
+                .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }
+                .btn:hover { background: #0056b3; }
+                .code { background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🚀 Cloud Media Server</h1>
+                <p>Serveur de stockage média local - <strong>Compatible tous projets</strong></p>
+                
+                <div class="card">
+                    <h2>📊 Serveur en fonctionnement</h2>
+                    <p><strong>Port:</strong> ${PORT}</p>
+                    <p><strong>Dossier upload:</strong> ${UPLOAD_DIR}</p>
+                    <p><strong>Taille max fichier:</strong> 2GB</p>
+                    <p><strong>CORS:</strong> ✅ Activé pour tous domaines</p>
+                    <p><strong>Cross-Origin:</strong> ✅ Compatible</p>
+                </div>
+                
+                <div class="card">
+                    <h2>🔗 Liens rapides</h2>
+                    <a class="btn" href="/index.html" target="_blank">Interface Upload</a>
+                    <a class="btn" href="/admin.html" target="_blank">Interface Admin</a>
+                    <a class="btn" href="/api/test" target="_blank">API Test</a>
+                    <a class="btn" href="/api/files" target="_blank">Liste fichiers</a>
+                </div>
+                
+                <div class="card">
+                    <h2>🌐 Compatibilité Cross-Origin</h2>
+                    <p>✅ Utilisable dans <strong>n'importe quel projet</strong></p>
+                    <div class="code">
+                        &lt;img src="https://ton-app.onrender.com/uploads/image.jpg"&gt;<br>
+                        background-image: url('https://ton-app.onrender.com/uploads/bg.jpg');<br>
+                        &lt;video src="https://ton-app.onrender. com/uploads/video.mp4"&gt;&lt;/video&gt;
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>📚 Documentation API</h2>
+                    <ul>
+                        <li><strong>POST /upload</strong> - Uploader un fichier</li>
+                        <li><strong>GET /api/files</strong> - Lister les fichiers</li>
+                        <li><strong>DELETE /api/files/:filename</strong> - Supprimer un fichier</li>
+                        <li><strong>GET /api/stats</strong> - Statistiques</li>
+                        <li><strong>POST /api/login</strong> - Login admin</li>
+                        <li><strong>GET /api/test</strong> - Tester le serveur</li>
+                    </ul>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+});
 
-// Middleware pour gérer les erreurs 404
+// Gestion des erreurs 404
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -521,62 +482,57 @@ app.use((req, res) => {
             "DELETE /api/files/:filename",
             "GET /api/stats",
             "POST /api/login",
-            "GET /api/test"
+            "GET /api/test",
+            "GET /api/health"
         ]
     });
 });
 
-// Middleware global de gestion d'erreurs
+// Gestion globale des erreurs
 app.use((err, req, res, next) => {
-    console.error('💥 ERREUR NON GÉRÉE:', err);
+    console.error('💥 ERREUR SERVEUR:', err);
     res.status(500).json({
         success: false,
         message: "Erreur serveur interne",
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        error: err.message
     });
 });
 
 // --- DÉMARRAGE SERVEUR ---
 app.listen(PORT, () => {
     console.log(`\n🚀 ===========================================`);
-    console.log(`🚀 Serveur MEGA lancé sur http://localhost:${PORT}`);
+    console.log(`🚀 Serveur Cloud Media lancé sur http://localhost:${PORT}`);
     console.log(`🚀 ===========================================\n`);
     console.log(`📋 CONFIGURATION:`);
     console.log(`   Port: ${PORT}`);
-    console.log(`   Email MEGA: ${MEGA_EMAIL}`);
-    console.log(`   Dossier MEGA: ${MEGA_FOLDER}`);
-    console.log(`   Dossier temp: ${TEMP_DIR}\n`);
+    console.log(`   Dossier upload: ${UPLOAD_DIR}`);
+    console.log(`   Taille max: 2GB`);
+    console.log(`   CORS: ✅ Tous domaines autorisés`);
+    console.log(`   Cross-Origin: ✅ Compatible\n`);
     
-    console.log(`🔍 DIAGNOSTIC:`);
+    console.log(`🔍 VÉRIFICATIONS:`);
+    console.log(`   ✅ Serveur démarré`);
+    console. log(`   ✅ CORS activé pour tous projets`);
+    console.log(`   ✅ Headers cross-origin configurés`);
+    console.log(`   ✅ Dossier upload: ${fs.existsSync(UPLOAD_DIR) ? '✅' : '❌'}`);
+    console.log(`   ✅ Middleware statique configuré`);
+    console.log(`   ✅ Compatible <img>, <video>, <audio>, CSS\n`);
     
-    // Vérifier le dossier temp
-    if (fs.existsSync(TEMP_DIR)) {
-        console.log(`   ✅ Dossier temp existe: ${TEMP_DIR}`);
-    } else {
-        console.log(`   ❌ Dossier temp manquant: ${TEMP_DIR}`);
-    }
+    console.log(`🌐 LIENS:`);
+    console.log(`   👉 Interface: http://localhost:${PORT}`);
+    console. log(`   👉 Upload: http://localhost:${PORT}/index.html`);
+    console.log(`   👉 Admin: http://localhost:${PORT}/admin.html`);
+    console.log(`   👉 API Test: http://localhost:${PORT}/api/test\n`);
     
-    // Vérifier les identifiants MEGA
-    if (MEGA_EMAIL === "tizergameht@gmail.com") {
-        console.log(`   ⚠️  ATTENTION: Email MEGA non configuré!`);
-        console.log(`   👉 Configurez MEGA_EMAIL dans .env ou modifiez server.js`);
-    }
+    console.log(`💡 POUR TESTER:`);
+    console.log(`   curl http://localhost:${PORT}/api/test`);
+    console. log(`   curl -X POST -F "file=@test. jpg" http://localhost:${PORT}/upload\n`);
     
-    if (MEGA_PASSWORD === "votre-mot-de-passe") {
-        console.log(`   ⚠️  ATTENTION: Mot de passe MEGA non configuré!`);
-        console.log(`   👉 Configurez MEGA_PASSWORD dans .env ou modifiez server.js`);
-    }
-    
-    console.log(`\n🌐 ENDPOINTS:`);
-    console.log(`   POST /upload          - Uploader un fichier`);
-    console.log(`   GET  /api/files       - Lister les fichiers`);
-    console.log(`   DELETE /api/files/*   - Supprimer un fichier`);
-    console.log(`   GET  /api/stats       - Statistiques`);
-    console.log(`   POST /api/login       - Login admin`);
-    console.log(`   GET  /api/test        - Tester la connexion\n`);
-    
-    console.log(`💡 CONSEIL:`);
-    console.log(`   1. Créez un fichier .env avec vos identifiants MEGA`);
-    console.log(`   2. Testez avec: curl http://localhost:${PORT}/api/test`);
-    console.log(`   3. Vérifiez les logs pour les erreurs détaillées\n`);
+    console.log(`🎯 COMPATIBILITÉ:`);
+    console.log(`   ✅ HTML: <img src="URL">`);
+    console.log(`   ✅ CSS: background-image: url('URL')`);
+    console.log(`   ✅ Video: <video src="URL">`);
+    console.log(`   ✅ Audio: <audio src="URL">`);
+    console.log(`   ✅ Iframe: <iframe src="URL">`);
+    console.log(`   ✅ Fetch/Ajax depuis n'importe quel domaine\n`);
 });
