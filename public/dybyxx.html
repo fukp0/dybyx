@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudMedia • Administration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            color: #ffffff;
+            min-height: 100vh;
+            overflow: hidden; /* Empêche le scroll global, on scroll dans les zones */
+        }
+
+        /* Arrière-plan animé (identique à l'uploader) */
+        .ambient-light {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .blob {
+            position: absolute;
+            filter: blur(90px);
+            opacity: 0.4;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 40vw; height: 40vw; background: #4f46e5; }
+        .blob-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: #db2777; animation-delay: -2s; }
+        .blob-3 { top: 50%; left: 50%; width: 20vw; height: 20vw; background: #f59e0b; animation-delay: -4s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(20px, 40px) scale(1.1); }
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Typography */
+        .heading-font { font-family: 'Outfit', sans-serif; }
+
+        /* Navigation Active State */
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-right: 3px solid #6366f1;
+            color: #fff;
+        }
+        .nav-item {
+            color: #94a3b8;
+            border-right: 3px solid transparent;
+        }
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.03);
+            color: #e2e8f0;
+        }
+
+        /* Table Styling */
+        .custom-table tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+        }
+        .custom-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .custom-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+        }
+
+        /* Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* Login Modal Animation */
+        .modal-enter { animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Fade in animation */
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #6366f1;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Ambient Background -->
+    <div class="ambient-light">
+        <div class="blob blob-1 rounded-full"></div>
+        <div class="blob blob-2 rounded-full"></div>
+        <div class="blob blob-3 rounded-full"></div>
+    </div>
+
+    <!-- LOGIN OVERLAY -->
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl modal-enter shadow-2xl relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-3xl rounded-full -mr-16 -mt-16"></div>
+            
+            <div class="text-center mb-8 relative z-10">
+                <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+                    <i class="fas fa-shield-alt text-2xl text-white"></i>
+                </div>
+                <h2 class="text-3xl font-bold heading-font text-white">Admin Panel</h2>
+                <p class="text-slate-400 mt-2 text-sm">Accès sécurisé au système</p>
+            </div>
+
+            <div id="loginError" class="hidden mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3">
+                <i class="fas fa-circle-exclamation text-rose-400"></i>
+                <span class="text-sm text-rose-300">Mot de passe incorrect</span>
+            </div>
+
+            <form onsubmit="event.preventDefault(); login();" class="space-y-4 relative z-10">
+                <div class="relative">
+                    <i class="fas fa-key absolute left-4 top-3.5 text-slate-500"></i>
+                    <input type="password" id="adminPassword" 
+                        class="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600"
+                        placeholder="Mot de passe administrateur"
+                        value="admin123">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center group">
+                    <span>Connexion</span>
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DASHBOARD LAYOUT -->
+    <div id="mainLayout" class="hidden flex h-screen overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-64 glass-panel flex flex-col z-20 transition-transform duration-300 absolute lg:relative -translate-x-full lg:translate-x-0" id="sidebar">
+            <!-- Logo -->
+            <div class="h-20 flex items-center px-6 border-b border-white/5">
+                <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-cloud text-white text-xs"></i>
+                </div>
+                <h1 class="text-xl font-bold heading-font tracking-tight">Cloud<span class="text-indigo-400">Media</span></h1>
+            </div>
+
+            <!-- Nav Links -->
+            <nav class="flex-1 overflow-y-auto py-6 space-y-1 px-3">
+                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Menu</p>
+                <a href="#" onclick="switchPanel('dashboard')" id="nav-dashboard" class="nav-item active flex items-center px-3 py-3 rounded-lg transition-all group">
+                    <i class="fas fa-chart-grid w-6 text-center mr-2 group-hover:text-indigo-400"></i>
+                    <span class="font-medium text-sm">Tableau de bord</span>
+                </a>
+                <a href="#" onclick="switchPanel('files')" id="nav-files" class="nav-item flex items-center px-3 py-3 rounded-lg transition-all group">
+                    <i class="fas fa-folder-open w-6 text-center mr-2 group-hover:text-indigo-400"></i>
+                    <span class="font-medium text-sm">Gestion Fichiers</span>
+                </a>
+                <a href="#" onclick="switchPanel('settings')" id="nav-settings" class="nav-item flex items-center px-3 py-3 rounded-lg transition-all group">
+                    <i class="fas fa-sliders w-6 text-center mr-2 group-hover:text-indigo-400"></i>
+                    <span class="font-medium text-sm">Paramètres</span>
+                </a>
+                
+                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2">Système</p>
+                <a href="/" class="nav-item flex items-center px-3 py-3 rounded-lg transition-all group">
+                    <i class="fas fa-arrow-left w-6 text-center mr-2"></i>
+                    <span class="font-medium text-sm">Retour au site</span>
+                </a>
+                <button onclick="logout()" class="w-full nav-item flex items-center px-3 py-3 rounded-lg transition-all group text-rose-400 hover:bg-rose-500/10">
+                    <i class="fas fa-power-off w-6 text-center mr-2"></i>
+                    <span class="font-medium text-sm">Déconnexion</span>
+                </button>
+            </nav>
+
+            <!-- User Mini Profile -->
+            <div class="p-4 border-t border-white/5">
+                <div class="flex items-center gap-3 p-2 rounded-xl bg-white/5 border border-white/5">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center justify-center text-slate-900 font-bold text-xs">A</div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-semibold text-white truncate">Admin System</p>
+                        <p class="text-xs text-emerald-400 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>En ligne</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+            
+            <!-- Mobile Toggle Header -->
+            <div class="lg:hidden h-16 glass-panel flex items-center px-4 justify-between z-10">
+                <button onclick="toggleSidebar()" class="p-2 text-white"><i class="fas fa-bars"></i></button>
+                <span class="font-bold">Admin Panel</span>
+                <div class="w-8"></div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 md:p-8">
+                
+                <!-- SECTION: DASHBOARD -->
+                <div id="panel-dashboard" class="space-y-6 fade-in">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h2 class="text-3xl font-bold heading-font">Vue d'ensemble</h2>
+                            <p class="text-slate-400">Bienvenue sur votre interface de gestion.</p>
+                        </div>
+                        <button onclick="loadDashboardData()" class="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-indigo-400">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-hdd text-6xl"></i>
+                            </div>
+                            <p class="text-slate-400 text-sm font-medium">Stockage Utilisé</p>
+                            <h3 class="text-2xl font-bold mt-1" id="statStorage">0 MB</h3>
+                            <div class="w-full bg-slate-700/50 h-1.5 rounded-full mt-3 overflow-hidden">
+                                <div id="storageBar" class="bg-indigo-500 h-full rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p id="storagePercent" class="text-xs text-indigo-400 mt-2">0% de la capacité</p>
+                        </div>
+
+                        <div class="glass-card p-5 rounded-2xl">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Total Fichiers</p>
+                                    <h3 class="text-2xl font-bold mt-1" id="statFiles">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                                    <i class="fas fa-file"></i>
+                                </div>
+                            </div>
+                            <span id="recentFilesBadge" class="text-xs px-2 py-1 rounded bg-emerald-500/10 text-emerald-400">Chargement...</span>
+                        </div>
+
+                        <div class="glass-card p-5 rounded-2xl">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Types de fichiers</p>
+                                    <h3 class="text-2xl font-bold mt-1" id="statTypes">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                            </div>
+                            <span id="fileTypesInfo" class="text-xs text-slate-500">Chargement...</span>
+                        </div>
+
+                        <div class="glass-card p-5 rounded-2xl">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-slate-400 text-sm font-medium">Statut Serveur</p>
+                                    <h3 class="text-2xl font-bold mt-1 text-emerald-400" id="serverStatus">En Ligne</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                            </div>
+                            <span id="uptimeInfo" class="text-xs text-slate-500">Vérification...</span>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Table -->
+                    <div class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                            <h3 class="font-bold text-lg">Activité Récente</h3>
+                            <button class="text-xs text-indigo-400 hover:text-indigo-300 font-medium" onclick="switchPanel('files')">Voir tout</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left custom-table">
+                                <thead class="bg-slate-900/50">
+                                    <tr>
+                                        <th class="p-4 font-semibold">Fichier</th>
+                                        <th class="p-4 font-semibold">Type</th>
+                                        <th class="p-4 font-semibold">Taille</th>
+                                        <th class="p-4 font-semibold">Date</th>
+                                        <th class="p-4 font-semibold">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm text-slate-300" id="activityTable">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-slate-500">
+                                            <div class="flex flex-col items-center">
+                                                <div class="spinner mb-2"></div>
+                                                <p>Chargement des fichiers...</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: FILES -->
+                <div id="panel-files" class="space-y-6 hidden fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 class="text-3xl font-bold heading-font">Explorateur</h2>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <div class="relative flex-1 md:w-64">
+                                <i class="fas fa-search absolute left-3 top-3 text-slate-500 text-sm"></i>
+                                <input type="text" id="searchInput" onkeyup="filterFiles()" placeholder="Rechercher..." class="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                            <button id="refreshFilesBtn" class="px-4 py-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl hover:bg-indigo-500/20 transition-colors" onclick="loadFiles()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="deleteSelectedBtn" class="px-4 py-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl hover:bg-rose-500/20 transition-colors hidden" onclick="deleteSelectedFiles()">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left custom-table">
+                                <thead class="bg-slate-900/50">
+                                    <tr>
+                                        <th class="p-4 w-10"><input type="checkbox" id="selectAll" class="rounded bg-slate-700 border-slate-600 text-indigo-500 focus:ring-offset-slate-900" onchange="toggleSelectAll(this)"></th>
+                                        <th class="p-4 font-semibold">Nom</th>
+                                        <th class="p-4 font-semibold">Type</th>
+                                        <th class="p-4 font-semibold">Taille</th>
+                                        <th class="p-4 font-semibold">Date</th>
+                                        <th class="p-4 font-semibold text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm text-slate-300" id="filesTable">
+                                    <tr>
+                                        <td colspan="6" class="p-8 text-center text-slate-500">
+                                            <div class="flex flex-col items-center">
+                                                <div class="spinner mb-2"></div>
+                                                <p>Chargement des fichiers...</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: SETTINGS -->
+                <div id="panel-settings" class="space-y-6 hidden fade-in">
+                    <h2 class="text-3xl font-bold heading-font">Configuration</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Server Config -->
+                        <div class="glass-panel p-6 rounded-2xl">
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                                <i class="fas fa-server text-indigo-400"></i> Serveur
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">Dossier d'Upload</label>
+                                    <input type="text" value="./uploads/" readonly class="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2 text-slate-400 font-mono text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">Limite Taille Fichier</label>
+                                    <select class="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2 text-white text-sm" disabled>
+                                        <option>2 GB (Défaut)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">Serveur API</label>
+                                    <div class="flex items-center gap-2">
+                                        <span id="apiStatus" class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs">En ligne</span>
+                                        <span class="text-xs text-slate-500" id="apiUrl"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="glass-panel p-6 rounded-2xl border-rose-500/20 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 blur-2xl rounded-full"></div>
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-rose-400">
+                                <i class="fas fa-triangle-exclamation"></i> Zone Danger
+                            </h3>
+                            <p class="text-sm text-slate-400 mb-6">Attention, ces actions sont irréversibles.</p>
+                            
+                            <div class="space-y-3">
+                                <button class="w-full py-2 px-4 rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors text-sm font-medium flex items-center justify-center gap-2" onclick="clearAllFiles()">
+                                    <i class="fas fa-bomb"></i> Supprimer tous les fichiers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-32 transition-all duration-300">
+        <div class="glass-panel bg-slate-900/90 rounded-xl p-4 shadow-2xl border-l-4 border-indigo-500 flex items-center max-w-sm">
+            <div class="mr-3">
+                <i class="fas fa-info-circle text-indigo-400 text-xl"></i>
+            </div>
+            <div>
+                <h4 id="toastTitle" class="font-bold text-white text-sm">Notification</h4>
+                <p id="toastMessage" class="text-xs text-gray-400">Message details here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===========================================
+        // CONFIGURATION - Compatible avec votre server.js
+        // ===========================================
+        const API_BASE = window.location.origin;
+        let allFiles = [];
+        let selectedFiles = new Set();
+
+        // --- AUTHENTICATION ---
+        async function login() {
+            const password = document.getElementById('adminPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Success
+                    errorDiv.classList.add('hidden');
+                    document.getElementById('loginModal').classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        document.getElementById('loginModal').style.display = 'none';
+                        document.getElementById('mainLayout').classList.remove('hidden');
+                        loadDashboardData();
+                        loadFiles();
+                        showToast('Bienvenue', 'Connexion administrateur réussie', 'success');
+                    }, 300);
+                } else {
+                    // Error
+                    errorDiv.classList.remove('hidden');
+                    showToast('Erreur', 'Mot de passe incorrect', 'error');
+                }
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.querySelector('span').textContent = 'Erreur de connexion au serveur';
+                showToast('Erreur', 'Impossible de se connecter au serveur', 'error');
+            }
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        // --- NAVIGATION & UI ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function switchPanel(panelId) {
+            // Update Menu
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + panelId).classList.add('active');
+
+            // Hide all panels
+            document.getElementById('panel-dashboard').classList.add('hidden');
+            document.getElementById('panel-files').classList.add('hidden');
+            document.getElementById('panel-settings').classList.add('hidden');
+
+            // Show target
+            const target = document.getElementById('panel-' + panelId);
+            target.classList.remove('hidden');
+            target.classList.add('fade-in');
+            
+            // Close sidebar on mobile
+            if(window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        }
+
+        function showToast(title, message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const titleEl = document.getElementById('toastTitle');
+            const msgEl = document.getElementById('toastMessage');
+            
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            
+            const colors = {
+                success: 'border-emerald-500',
+                error: 'border-rose-500',
+                info: 'border-indigo-500',
+                warning: 'border-amber-500'
+            };
+            
+            // Reset border color
+            toast.querySelector('.glass-panel').className = `glass-panel bg-slate-900/90 rounded-xl p-4 shadow-2xl border-l-4 ${colors[type] || colors.info} flex items-center max-w-sm`;
+
+            // Show
+            toast.classList.remove('translate-y-32');
+            
+            // Auto hide after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-32');
+            }, 4000);
+        }
+
+        // --- DATA LOADING ---
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                const statsResponse = await fetch('/api/stats');
+                const statsData = await statsResponse.json();
+                
+                if (statsData.success) {
+                    // Update storage
+                    document.getElementById('statStorage').textContent = statsData.stats.storageUsed;
+                    
+                    // Calculate percentage (2GB max = 2000MB)
+                    const usedMB = parseFloat(statsData.stats.storageUsed.split(' ')[0]);
+                    const percentage = Math.min(100, (usedMB / 2000) * 100);
+                    document.getElementById('storageBar').style.width = `${percentage}%`;
+                    document.getElementById('storagePercent').textContent = `${percentage.toFixed(1)}% de la capacité`;
+                    
+                    // Update files count
+                    document.getElementById('statFiles').textContent = statsData.stats.totalFiles;
+                    
+                    // Update types count
+                    const typeCount = Object.keys(statsData.stats.byType || {}).length;
+                    document.getElementById('statTypes').textContent = typeCount;
+                    
+                    // Create types info text
+                    const typesInfo = Object.entries(statsData.stats.byType || {})
+                        .map(([type, count]) => `${type}: ${count}`)
+                        .join(', ');
+                    document.getElementById('fileTypesInfo').textContent = typesInfo || 'Aucun type';
+                }
+                
+                // Load recent files for activity table
+                const filesResponse = await fetch('/api/files');
+                const filesData = await filesResponse.json();
+                
+                if (filesData.success && filesData.files.length > 0) {
+                    // Update recent files badge
+                    const recentCount = Math.min(filesData.files.length, 10);
+                    document.getElementById('recentFilesBadge').textContent = `+${recentCount} fichiers récents`;
+                    
+                    // Update activity table
+                    renderActivityTable(filesData.files.slice(0, 5));
+                }
+                
+                // Check server status
+                try {
+                    const testResponse = await fetch('/api/health');
+                    const testData = await testResponse.json();
+                    document.getElementById('serverStatus').textContent = testData.status === 'running' ? 'En Ligne' : 'Hors Ligne';
+                    document.getElementById('serverStatus').className = testData.status === 'running' ? 
+                        'text-2xl font-bold mt-1 text-emerald-400' : 'text-2xl font-bold mt-1 text-rose-400';
+                    
+                    // Update uptime info
+                    if (testData.server?.uptime) {
+                        const hours = Math.floor(testData.server.uptime / 3600);
+                        const days = Math.floor(hours / 24);
+                        document.getElementById('uptimeInfo').textContent = `Uptime: ${days}j ${hours % 24}h`;
+                    }
+                } catch (e) {
+                    document.getElementById('serverStatus').textContent = 'Erreur';
+                    document.getElementById('serverStatus').className = 'text-2xl font-bold mt-1 text-rose-400';
+                }
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Erreur', 'Impossible de charger les données', 'error');
+            }
+        }
+
+        async function loadFiles() {
+            const filesTable = document.getElementById('filesTable');
+            const refreshBtn = document.getElementById('refreshFilesBtn');
+            
+            // Show loading
+            filesTable.innerHTML = `
+                <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-500">
+                        <div class="flex flex-col items-center">
+                            <div class="spinner mb-2"></div>
+                            <p>Chargement des fichiers...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            
+            // Add loading class to refresh button
+            refreshBtn.innerHTML = '<div class="spinner"></div>';
+            refreshBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allFiles = data.files || [];
+                    renderFilesTable();
+                    selectedFiles.clear();
+                    updateDeleteButton();
+                    showToast('Succès', `${allFiles.length} fichiers chargés`, 'success');
+                } else {
+                    throw new Error(data.message || 'Erreur de chargement');
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                filesTable.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-rose-500">
+                            <i class="fas fa-exclamation-triangle text-xl mb-2 block"></i>
+                            <p>Erreur de chargement</p>
+                            <p class="text-xs mt-1">${error.message}</p>
+                        </td>
+                    </tr>
+                `;
+                showToast('Erreur', 'Impossible de charger les fichiers', 'error');
+            } finally {
+                // Reset refresh button
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                refreshBtn.disabled = false;
+            }
+        }
+
+        function renderActivityTable(files) {
+            const tbody = document.getElementById('activityTable');
+            tbody.innerHTML = '';
+            
+            if (files.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-slate-500">
+                            <i class="fas fa-folder-open text-3xl mb-2 block"></i>
+                            <p>Aucun fichier récent</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            files.forEach(file => {
+                const tr = document.createElement('tr');
+                
+                // Get file icon based on type
+                const icon = getFileIcon(file.type);
+                
+                // Format date
+                const date = new Date(file.date).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                
+                tr.innerHTML = `
+                    <td class="p-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-white/5 flex items-center justify-center">${icon}</div>
+                        <div class="truncate max-w-xs">
+                            <span class="font-medium text-white block truncate">${file.originalName || file.name}</span>
+                            <span class="text-xs text-slate-500 truncate block">${file.filename || ''}</span>
+                        </div>
+                    </td>
+                    <td class="p-4"><span class="px-2 py-1 rounded bg-white/5 text-xs capitalize">${file.type || 'inconnu'}</span></td>
+                    <td class="p-4 font-mono text-slate-400 text-xs">${file.size || 'N/A'}</td>
+                    <td class="p-4 text-xs text-slate-500">${date}</td>
+                    <td class="p-4">
+                        <span class="flex items-center text-emerald-400 text-xs gap-1">
+                            <i class="fas fa-check-circle"></i> Stocké
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderFilesTable() {
+            const tbody = document.getElementById('filesTable');
+            tbody.innerHTML = '';
+            
+            if (allFiles.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">
+                            <i class="fas fa-folder-open text-3xl mb-2 block"></i>
+                            <p>Aucun fichier uploadé</p>
+                            <p class="text-xs mt-1">Utilisez l'interface principale pour uploader des fichiers</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            allFiles.forEach((file, index) => {
+                const tr = document.createElement('tr');
+                tr.dataset.index = index;
+                
+                const icon = getFileIcon(file.type);
+                const date = new Date(file.date).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <input type="checkbox" class="file-checkbox rounded bg-slate-700 border-slate-600 text-indigo-500 focus:ring-offset-slate-900"
+                               onchange="toggleFileSelection(${index}, this.checked)">
+                    </td>
+                    <td class="p-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-white/5 flex items-center justify-center">${icon}</div>
+                        <div class="truncate max-w-xs">
+                            <span class="font-medium text-white block truncate">${file.originalName || file.name}</span>
+                            <span class="text-xs text-slate-500 truncate block">${file.filename || file.name}</span>
+                        </div>
+                    </td>
+                    <td class="p-4"><span class="px-2 py-1 rounded bg-white/5 text-xs capitalize">${file.type || 'inconnu'}</span></td>
+                    <td class="p-4 font-mono text-slate-400">${file.size || 'N/A'}</td>
+                    <td class="p-4 text-sm text-slate-500">${date}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button class="text-slate-400 hover:text-indigo-400 transition-colors" onclick="copyFileUrl('${file.url}')" title="Copier le lien">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        <a href="${file.url}" target="_blank" class="text-slate-400 hover:text-emerald-400 transition-colors" title="Voir le fichier">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        <button class="text-slate-400 hover:text-rose-400 transition-colors" onclick="deleteFile('${file.name}', '${file.originalName || file.name}')" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getFileIcon(type) {
+            const map = {
+                'image': '<i class="fas fa-image text-blue-400"></i>',
+                'video': '<i class="fas fa-film text-rose-400"></i>',
+                'audio': '<i class="fas fa-music text-emerald-400"></i>',
+                'document': '<i class="fas fa-file-alt text-amber-400"></i>',
+                'archive': '<i class="fas fa-file-zipper text-purple-400"></i>',
+                'pdf': '<i class="fas fa-file-pdf text-red-400"></i>'
+            };
+            return map[type] || '<i class="fas fa-file text-slate-400"></i>';
+        }
+
+        // --- FILE MANAGEMENT ---
+        async function deleteFile(filename, displayName) {
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer "${displayName}" ?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Succès', `Fichier "${displayName}" supprimé`, 'success');
+                    // Reload files and dashboard data
+                    loadFiles();
+                    loadDashboardData();
+                } else {
+                    showToast('Erreur', data.message || 'Erreur lors de la suppression', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                showToast('Erreur', 'Impossible de supprimer le fichier', 'error');
+            }
+        }
+
+        async function clearAllFiles() {
+            if (!confirm('ATTENTION : Voulez-vous vraiment supprimer TOUS les fichiers ?\nCette action est irréversible !')) {
+                return;
+            }
+            
+            try {
+                // Get all files first
+                const filesResponse = await fetch('/api/files');
+                const filesData = await filesResponse.json();
+                
+                if (!filesData.success || !filesData.files || filesData.files.length === 0) {
+                    showToast('Info', 'Aucun fichier à supprimer', 'info');
+                    return;
+                }
+                
+                // Delete each file
+                let deletedCount = 0;
+                let errorCount = 0;
+                
+                for (const file of filesData.files) {
+                    try {
+                        const deleteResponse = await fetch(`/api/files/${encodeURIComponent(file.name)}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        const deleteData = await deleteResponse.json();
+                        if (deleteData.success) {
+                            deletedCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (e) {
+                        errorCount++;
+                    }
+                }
+                
+                // Show results
+                let message = `${deletedCount} fichier(s) supprimé(s)`;
+                if (errorCount > 0) {
+                    message += `, ${errorCount} erreur(s)`;
+                }
+                
+                showToast('Succès', message, deletedCount > 0 ? 'success' : 'warning');
+                
+                // Reload data
+                loadFiles();
+                loadDashboardData();
+                
+            } catch (error) {
+                console.error('Error clearing all files:', error);
+                showToast('Erreur', 'Impossible de supprimer les fichiers', 'error');
+            }
+        }
+
+        // --- FILE SELECTION ---
+        function toggleFileSelection(index, checked) {
+            if (checked) {
+                selectedFiles.add(index);
+            } else {
+                selectedFiles.delete(index);
+            }
+            updateDeleteButton();
+            
+            // Update select all checkbox
+            const selectAll = document.getElementById('selectAll');
+            selectAll.indeterminate = selectedFiles.size > 0 && selectedFiles.size < allFiles.length;
+            selectAll.checked = selectedFiles.size === allFiles.length && allFiles.length > 0;
+        }
+
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            checkboxes.forEach((cb, index) => {
+                cb.checked = checkbox.checked;
+                if (checkbox.checked) {
+                    selectedFiles.add(index);
+                } else {
+                    selectedFiles.delete(index);
+                }
+            });
+            updateDeleteButton();
+        }
+
+        function updateDeleteButton() {
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            if (selectedFiles.size > 0) {
+                deleteBtn.classList.remove('hidden');
+                deleteBtn.innerHTML = `<i class="fas fa-trash-alt"></i> (${selectedFiles.size})`;
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+        }
+
+        function deleteSelectedFiles() {
+            const selectedIndices = Array.from(selectedFiles);
+            if (selectedIndices.length === 0) return;
+            
+            if (!confirm(`Supprimer ${selectedIndices.length} fichier(s) sélectionné(s) ?`)) {
+                return;
+            }
+            
+            // Delete selected files
+            selectedIndices.forEach(async index => {
+                const file = allFiles[index];
+                if (file) {
+                    try {
+                        await fetch(`/api/files/${encodeURIComponent(file.name)}`, {
+                            method: 'DELETE'
+                        });
+                    } catch (error) {
+                        console.error(`Error deleting ${file.name}:`, error);
+                    }
+                }
+            });
+            
+            // Show notification
+            showToast('Suppression', `${selectedIndices.length} fichier(s) en cours de suppression...`, 'info');
+            
+            // Clear selection
+            selectedFiles.clear();
+            updateDeleteButton();
+            
+            // Reload after a delay
+            setTimeout(() => {
+                loadFiles();
+                loadDashboardData();
+            }, 1500);
+        }
+
+        function filterFiles() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#filesTable tr[data-index]');
+            
+            rows.forEach(row => {
+                const file = allFiles[parseInt(row.dataset.index)];
+                const text = (file.originalName + ' ' + file.name + ' ' + file.type).toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        async function copyFileUrl(url) {
+            try {
+                await navigator.clipboard.writeText(url);
+                showToast('Succès', 'Lien copié dans le presse-papier', 'success');
+            } catch (error) {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Succès', 'Lien copié', 'success');
+            }
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set API URL in settings
+            document.getElementById('apiUrl').textContent = window.location.origin;
+            
+            // Check server health
+            fetch('/api/health')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'running') {
+                        document.getElementById('apiStatus').className = 'px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs';
+                        document.getElementById('apiStatus').textContent = 'En ligne';
+                    } else {
+                        document.getElementById('apiStatus').className = 'px-2 py-1 rounded bg-rose-500/10 text-rose-400 text-xs';
+                        document.getElementById('apiStatus').textContent = 'Hors ligne';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('apiStatus').className = 'px-2 py-1 rounded bg-rose-500/10 text-rose-400 text-xs';
+                    document.getElementById('apiStatus').textContent = 'Erreur';
+                });
+            
+            // Auto-focus password field
+            document.getElementById('adminPassword').focus();
+        });
+
+        // Expose functions globally
+        window.login = login;
+        window.logout = logout;
+        window.switchPanel = switchPanel;
+        window.toggleSidebar = toggleSidebar;
+        window.loadDashboardData = loadDashboardData;
+        window.loadFiles = loadFiles;
+        window.filterFiles = filterFiles;
+        window.deleteFile = deleteFile;
+        window.deleteSelectedFiles = deleteSelectedFiles;
+        window.clearAllFiles = clearAllFiles;
+        window.toggleSelectAll = toggleSelectAll;
+        window.toggleFileSelection = toggleFileSelection;
+        window.copyFileUrl = copyFileUrl;
+
+    </script>
+</body>
+                                                                              </html>
