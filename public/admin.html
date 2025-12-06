@@ -1,692 +1,612 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Cloud Média JS | MEGA Manager</title>
+    <title>Cloud Media - Panel Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --accent: #7c3aed;
-            --accent-hover: #6d28d9;
-            --accent-light: #a78bfa;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --gradient: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --accent: #8b5cf6;
-            --accent-hover: #7c3aed;
-            --accent-light: #a78bfa;
-            --border: #334155;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-color);
-            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
-            padding: 20px;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--border);
+        
+        .card-hover {
+            transition: all 0.3s ease;
         }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 24px;
-            font-weight: bold;
-            background: var(--gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
-
-        .logo svg {
-            width: 32px;
-            height: 32px;
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        .btn-icon {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
+        
+        .table-row-hover:hover {
+            background: rgba(255, 255, 255, 0.05);
         }
-
-        .btn-icon:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
-
-        .btn-primary {
-            background: var(--gradient);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -10px var(--accent);
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid var(--border);
-            transition: transform 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--gradient);
-            color: white;
-            font-size: 24px;
-        }
-
-        .stat-title {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-
-        .stat-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        /* Files Table */
-        .files-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 30px;
-            border: 1px solid var(--border);
-            margin-bottom: 30px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .search-box {
-            position: relative;
-            width: 300px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 12px 16px 12px 44px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--bg-color);
-            color: var(--text-main);
-            font-size: 0.95rem;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        .table-container {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .files-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .files-table th {
-            background: var(--bg-color);
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-muted);
-            border-bottom: 2px solid var(--border);
-        }
-
-        .files-table td {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .files-table tr:hover {
-            background: rgba(124, 58, 237, 0.05);
-        }
-
-        .file-icon {
-            width: 24px;
-            height: 24px;
-            color: var(--accent);
-        }
-
-        .file-name {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-        }
-
-        .file-type {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .type-image { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .type-video { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .type-audio { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .type-document { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-        .type-other { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
-
-        .file-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-action {
-            padding: 6px 12px;
-            border: 1px solid var(--border);
-            background: var(--bg-color);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .btn-view { color: #3b82f6; }
-        .btn-view:hover { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
-
-        .btn-delete { color: #ef4444; }
-        .btn-delete:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
-
-        /* Login Modal */
+        
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
         }
-
-        .modal {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 40px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid var(--border);
+        
+        .sidebar {
+            transition: all 0.3s ease;
         }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .modal-subtitle {
-            color: var(--text-muted);
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--bg-color);
-            color: var(--text-main);
-            font-size: 1rem;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 14px;
-            background: var(--gradient);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -10px var(--accent);
-        }
-
-        .error-message {
-            color: var(--error);
-            font-size: 0.9rem;
-            margin-top: 10px;
-            display: none;
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--gradient);
-            color: white;
-            padding: 14px 28px;
-            border-radius: 14px;
-            opacity: 0;
-            transition: all 0.5s;
-            pointer-events: none;
-            z-index: 1000;
-            box-shadow: 0 20px 40px -20px var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-
-        .loading-spinner {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--accent);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        /* Responsive */
+        
         @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
+            .sidebar {
+                transform: translateX(-100%);
             }
-            
-            .section-header {
-                flex-direction: column;
-                gap: 16px;
-                align-items: stretch;
-            }
-            
-            .search-box {
-                width: 100%;
-            }
-            
-            .files-table th,
-            .files-table td {
-                padding: 12px 8px;
-                font-size: 0.9rem;
-            }
-            
-            .file-name span {
-                max-width: 150px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+            .sidebar.open {
+                transform: translateX(0);
             }
         }
     </style>
 </head>
-<body>
+<body class="text-gray-100">
     <!-- Login Modal -->
-    <div class="modal-overlay" id="loginModal">
-        <div class="modal">
-            <h2 class="modal-title">🔐 Connexion Admin</h2>
-            <p class="modal-subtitle">Veuillez entrer le mot de passe administrateur</p>
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="glass-effect rounded-2xl p-8 max-w-md w-full card-hover">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-r from-red-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-3xl"></i>
+                </div>
+                <h2 class="text-3xl font-bold font-['Poppins']">Accès Admin</h2>
+                <p class="text-gray-400 mt-2">Veuillez entrer le mot de passe administrateur</p>
+            </div>
             
-            <form id="loginForm">
-                <div class="form-group">
-                    <label class="form-label" for="password">Mot de passe</label>
-                    <input type="password" id="password" class="form-input" placeholder="Entrez le mot de passe" required>
+            <div id="loginError" class="hidden p-4 rounded-lg bg-red-500/20 border border-red-500/30 mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-3 text-red-400"></i>
+                    <p class="text-red-300">Mot de passe incorrect</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Mot de passe</label>
+                    <input type="password" id="adminPassword" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="••••••••" autofocus>
                 </div>
                 
-                <div class="error-message" id="loginError">
-                    Mot de passe incorrect
-                </div>
-                
-                <button type="submit" class="btn-login" id="loginBtn">
-                    <span id="loginBtnText">Se connecter</span>
+                <button id="loginBtn" class="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 rounded-lg font-semibold hover:opacity-90 transition-opacity">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Se connecter
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="container" id="mainContent" style="display: none;">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path>
-                </svg>
-                <span>Cloud Media Admin</span>
-            </div>
-            
-            <div class="header-actions">
-                <button class="btn-icon" onclick="toggleTheme()" title="Changer le thème">
-                    <svg id="themeIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                </button>
+    <!-- Main Layout -->
+    <div id="mainLayout" class="hidden">
+        <!-- Top Bar -->
+        <div class="glass-effect py-4 px-6">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <button id="sidebarToggle" class="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-lock text-xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold font-['Poppins']">Admin<span class="text-red-300">Panel</span></h1>
+                    </div>
+                </div>
                 
-                <a href="index.html" class="btn-primary" title="Retour à l'accueil">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11l2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1m-6 0h6"></path>
-                    </svg>
-                    Accueil
-                </a>
-                
-                <button class="btn-primary" onclick="refreshData()" title="Rafraîchir">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 4v6h-6M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
-                    </svg>
-                    Rafraîchir
-                </button>
-            </div>
-        </header>
-
-        <!-- Stats Grid -->
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon">📁</div>
-                    <div>
-                        <div class="stat-title">Fichiers totaux</div>
-                        <div class="stat-value" id="totalFiles">0</div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-4">
+                        <div class="px-4 py-2 rounded-lg bg-white/5">
+                            <i class="fas fa-database mr-2"></i>
+                            <span id="totalFiles">0 fichiers</span>
+                        </div>
+                        <div class="px-4 py-2 rounded-lg bg-white/5">
+                            <i class="fas fa-hdd mr-2"></i>
+                            <span id="totalStorage">0 MB</span>
+                        </div>
                     </div>
+                    
+                    <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-pink-600 hover:opacity-90 transition-opacity">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                    </button>
                 </div>
-                <div class="stat-subtitle">Sur votre compte MEGA</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon">💾</div>
-                    <div>
-                        <div class="stat-title">Stockage utilisé</div>
-                        <div class="stat-value" id="storageUsed">0 MB</div>
-                    </div>
-                </div>
-                <div class="stat-subtitle">Espace MEGA consommé</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon">🖼️</div>
-                    <div>
-                        <div class="stat-title">Images</div>
-                        <div class="stat-value" id="imageCount">0</div>
-                    </div>
-                </div>
-                <div class="stat-subtitle">Fichiers image</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon">🎬</div>
-                    <div>
-                        <div class="stat-title">Vidéos</div>
-                        <div class="stat-value" id="videoCount">0</div>
-                    </div>
-                </div>
-                <div class="stat-subtitle">Fichiers vidéo</div>
             </div>
         </div>
 
-        <!-- Files Section -->
-        <section class="files-section">
-            <div class="section-header">
-                <h2 class="section-title">📂 Fichiers MEGA</h2>
-                <div class="search-box">
-                    <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" class="search-input" id="searchInput" placeholder="Rechercher un fichier...">
+        <div class="container mx-auto px-4 py-6 flex">
+            <!-- Sidebar -->
+            <div id="sidebar" class="sidebar w-64 flex-shrink-0 lg:block fixed lg:relative inset-y-0 left-0 z-40 lg:z-auto bg-gray-900 lg:bg-transparent p-6 lg:p-0 overflow-y-auto">
+                <div class="space-y-6">
+                    <!-- User Info -->
+                    <div class="glass-effect rounded-xl p-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center mr-3">
+                                <i class="fas fa-user-shield text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold">Administrateur</p>
+                                <p class="text-sm text-gray-400">Super Admin</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <nav class="space-y-2">
+                        <a href="#" id="navDashboard" class="nav-item flex items-center p-3 rounded-lg bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30">
+                            <i class="fas fa-tachometer-alt mr-3 text-red-400"></i>
+                            <span>Tableau de bord</span>
+                        </a>
+                        <a href="#" id="navFiles" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors">
+                            <i class="fas fa-folder mr-3 text-blue-400"></i>
+                            <span>Gestion fichiers</span>
+                        </a>
+                        <a href="#" id="navStats" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors">
+                            <i class="fas fa-chart-pie mr-3 text-green-400"></i>
+                            <span>Statistiques</span>
+                        </a>
+                        <a href="#" id="navSettings" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors">
+                            <i class="fas fa-cog mr-3 text-yellow-400"></i>
+                            <span>Paramètres</span>
+                        </a>
+                    </nav>
+
+                    <!-- Quick Actions -->
+                    <div class="glass-effect rounded-xl p-4">
+                        <h3 class="font-bold mb-3">Actions rapides</h3>
+                        <div class="space-y-2">
+                            <button id="refreshBtn" class="w-full flex items-center p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                <i class="fas fa-sync-alt mr-3"></i>
+                                <span>Actualiser</span>
+                            </button>
+                            <button id="deleteAllBtn" class="w-full flex items-center p-2 rounded-lg hover:bg-white/5 transition-colors text-red-400">
+                                <i class="fas fa-trash-alt mr-3"></i>
+                                <span>Vider le stockage</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="glass-effect rounded-xl p-4">
+                        <h3 class="font-bold mb-3">Statut système</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Serveur</span>
+                                <span class="text-green-400 font-semibold">
+                                    <i class="fas fa-circle text-xs mr-1"></i>En ligne
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">CORS</span>
+                                <span class="text-green-400 font-semibold">Activé</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Taille max</span>
+                                <span class="font-semibold">2 GB</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="table-container">
-                <table class="files-table" id="filesTable">
-                    <thead>
-                        <tr>
-                            <th>Nom du fichier</th>
-                            <th>Taille</th>
-                            <th>Type</th>
-                            <th>Date d'upload</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="filesTableBody">
-                        <!-- Les fichiers seront insérés ici par JavaScript -->
-                    </tbody>
-                </table>
-                
-                <!-- Loading State -->
-                <div class="loading" id="loadingState">
-                    <div class="loading-spinner"></div>
-                    <p>Chargement des fichiers depuis MEGA...</p>
+            <!-- Main Content -->
+            <div class="flex-1 lg:ml-6">
+                <!-- Dashboard Panel -->
+                <div id="dashboardPanel" class="fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <!-- Stats Cards -->
+                        <div class="glass-effect rounded-2xl p-6 card-hover">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center mr-4">
+                                    <i class="fas fa-file-alt text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Total Fichiers</p>
+                                    <p id="statFiles" class="text-3xl font-bold">0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-effect rounded-2xl p-6 card-hover">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-4">
+                                    <i class="fas fa-hdd text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Stockage utilisé</p>
+                                    <p id="statStorage" class="text-3xl font-bold">0 MB</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-effect rounded-2xl p-6 card-hover">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-4">
+                                    <i class="fas fa-chart-line text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Dernier upload</p>
+                                    <p id="statLastUpload" class="text-3xl font-bold">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Type Distribution -->
+                    <div class="glass-effect rounded-2xl p-6 mb-8 card-hover">
+                        <h3 class="text-xl font-bold mb-6">Distribution par type</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                <i class="fas fa-image text-3xl text-blue-400 mb-2"></i>
+                                <p class="text-2xl font-bold" id="typeImages">0</p>
+                                <p class="text-sm text-gray-400">Images</p>
+                            </div>
+                            <div class="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                <i class="fas fa-video text-3xl text-purple-400 mb-2"></i>
+                                <p class="text-2xl font-bold" id="typeVideos">0</p>
+                                <p class="text-sm text-gray-400">Vidéos</p>
+                            </div>
+                            <div class="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                                <i class="fas fa-music text-3xl text-green-400 mb-2"></i>
+                                <p class="text-2xl font-bold" id="typeAudio">0</p>
+                                <p class="text-sm text-gray-400">Audio</p>
+                            </div>
+                            <div class="text-center p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                                <i class="fas fa-file text-3xl text-yellow-400 mb-2"></i>
+                                <p class="text-2xl font-bold" id="typeOther">0</p>
+                                <p class="text-sm text-gray-400">Autres</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="glass-effect rounded-2xl p-6 card-hover">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold">Activité récente</h3>
+                            <button id="refreshActivity" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>Actualiser
+                            </button>
+                        </div>
+                        <div id="activityList" class="space-y-4">
+                            <!-- Activity items will be loaded here -->
+                        </div>
+                    </div>
                 </div>
-                
-                <!-- Empty State -->
-                <div class="empty-state" id="emptyState" style="display: none;">
-                    <div class="empty-icon">📭</div>
-                    <h3>Aucun fichier trouvé</h3>
-                    <p>Les fichiers uploadés apparaîtront ici.</p>
+
+                <!-- Files Management Panel -->
+                <div id="filesPanel" class="fade-in hidden">
+                    <div class="glass-effect rounded-2xl p-6 card-hover">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold">Gestion des fichiers</h3>
+                            <div class="flex space-x-3">
+                                <div class="relative">
+                                    <input type="text" id="searchFiles" placeholder="Rechercher..." class="px-4 py-2 rounded-lg bg-white/5 border border-gray-700 focus:border-blue-500 focus:outline-none w-64">
+                                    <i class="fas fa-search absolute right-3 top-3 text-gray-500"></i>
+                                </div>
+                                <select id="filterType" class="px-4 py-2 rounded-lg bg-white/5 border border-gray-700 focus:border-blue-500 focus:outline-none">
+                                    <option value="all">Tous les types</option>
+                                    <option value="image">Images</option>
+                                    <option value="video">Vidéos</option>
+                                    <option value="audio">Audio</option>
+                                    <option value="other">Autres</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl">
+                            <table class="w-full">
+                                <thead class="bg-white/5">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left">
+                                            <input type="checkbox" id="selectAll">
+                                        </th>
+                                        <th class="py-3 px-4 text-left">Nom du fichier</th>
+                                        <th class="py-3 px-4 text-left">Type</th>
+                                        <th class="py-3 px-4 text-left">Taille</th>
+                                        <th class="py-3 px-4 text-left">Date</th>
+                                        <th class="py-3 px-4 text-left">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filesTable" class="divide-y divide-gray-800">
+                                    <!-- Files will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-6">
+                            <div>
+                                <span id="selectedCount">0</span> fichier(s) sélectionné(s)
+                            </div>
+                            <div class="flex space-x-3">
+                                <button id="deleteSelected" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fas fa-trash-alt mr-2"></i>Supprimer sélection
+                                </button>
+                                <button id="downloadSelected" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fas fa-download mr-2"></i>Télécharger
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Panel -->
+                <div id="statsPanel" class="fade-in hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Detailed Stats -->
+                        <div class="glass-effect rounded-2xl p-6 card-hover">
+                            <h3 class="text-xl font-bold mb-6">Statistiques détaillées</h3>
+                            <div id="detailedStats" class="space-y-4">
+                                <!-- Stats will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Storage Usage -->
+                        <div class="glass-effect rounded-2xl p-6 card-hover">
+                            <h3 class="text-xl font-bold mb-6">Utilisation du stockage</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Images</span>
+                                        <span id="storageImages">0 MB</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-3">
+                                        <div id="progressImages" class="h-3 rounded-full bg-blue-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Vidéos</span>
+                                        <span id="storageVideos">0 MB</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-3">
+                                        <div id="progressVideos" class="h-3 rounded-full bg-purple-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Audio</span>
+                                        <span id="storageAudio">0 MB</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-3">
+                                        <div id="progressAudio" class="h-3 rounded-full bg-green-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Panel -->
+                <div id="settingsPanel" class="fade-in hidden">
+                    <div class="glass-effect rounded-2xl p-6 card-hover">
+                        <h3 class="text-xl font-bold mb-6">Paramètres du serveur</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Server Info -->
+                            <div class="p-4 rounded-xl bg-white/5">
+                                <h4 class="font-bold mb-3 text-lg">Informations serveur</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-sm text-gray-400">Dossier upload</p>
+                                        <p id="serverUploadDir" class="font-semibold">./uploads</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-400">Port</p>
+                                        <p id="serverPort" class="font-semibold">3000</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-400">CORS</p>
+                                        <p class="font-semibold text-green-400">Activé</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-400">Taille max fichier</p>
+                                        <p class="font-semibold">2 GB</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Danger Zone -->
+                            <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                                <h4 class="font-bold mb-3 text-lg text-red-300">Zone de danger</h4>
+                                <p class="text-gray-300 mb-4">Ces actions sont irréversibles. Soyez certain de ce que vous faites.</p>
+                                
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="font-semibold">Vider le stockage</p>
+                                            <p class="text-sm text-gray-400">Supprime tous les fichiers uploadés</p>
+                                        </div>
+                                        <button id="clearAllBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+                                            <i class="fas fa-bomb mr-2"></i>Vider
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="font-semibold">Changer mot de passe admin</p>
+                                            <p class="text-sm text-gray-400">Définir un nouveau mot de passe</p>
+                                        </div>
+                                        <button id="changePasswordBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors">
+                                            <i class="fas fa-key mr-2"></i>Changer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Server Actions -->
+                            <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                <h4 class="font-bold mb-3 text-lg text-blue-300">Actions serveur</h4>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button id="restartServer" class="flex items-center justify-center p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                        <i class="fas fa-redo-alt mr-3"></i>
+                                        <span>Redémarrer le serveur</span>
+                                    </button>
+                                    
+                                    <button id="backupServer" class="flex items-center justify-center p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                        <i class="fas fa-database mr-3"></i>
+                                        <span>Sauvegarder les données</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast">Opération réussie !</div>
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden">
+        <div class="glass-effect rounded-2xl p-8 max-w-md w-full card-hover">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold">Confirmer la suppression</h3>
+                <p class="text-gray-400 mt-2" id="deleteModalText">Êtes-vous sûr de vouloir supprimer ces fichiers ? Cette action est irréversible.</p>
+            </div>
+            
+            <div class="flex space-x-4">
+                <button id="cancelDelete" class="flex-1 py-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                    Annuler
+                </button>
+                <button id="confirmDelete" class="flex-1 py-3 bg-gradient-to-r from-red-600 to-pink-600 rounded-lg font-semibold hover:opacity-90 transition-opacity">
+                    <i class="fas fa-trash-alt mr-2"></i>Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 glass-effect rounded-lg p-4 shadow-xl transform translate-y-full transition-transform duration-300 max-w-sm z-50">
+        <div class="flex items-center">
+            <div id="toastIcon" class="w-8 h-8 rounded-full flex items-center justify-center mr-3">
+                <i id="toastIconClass" class="fas fa-info"></i>
+            </div>
+            <div>
+                <p id="toastTitle" class="font-bold"></p>
+                <p id="toastMessage" class="text-sm text-gray-300"></p>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Variables globales
-        let currentFiles = [];
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const mainLayout = document.getElementById('mainLayout');
+        const adminPassword = document.getElementById('adminPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        
+        // Navigation
+        const navDashboard = document.getElementById('navDashboard');
+        const navFiles = document.getElementById('navFiles');
+        const navStats = document.getElementById('navStats');
+        const navSettings = document.getElementById('navSettings');
+        
+        // Panels
+        const dashboardPanel = document.getElementById('dashboardPanel');
+        const filesPanel = document.getElementById('filesPanel');
+        const statsPanel = document.getElementById('statsPanel');
+        const settingsPanel = document.getElementById('settingsPanel');
+        
+        // Dashboard elements
+        const statFiles = document.getElementById('statFiles');
+        const statStorage = document.getElementById('statStorage');
+        const statLastUpload = document.getElementById('statLastUpload');
+        const typeImages = document.getElementById('typeImages');
+        const typeVideos = document.getElementById('typeVideos');
+        const typeAudio = document.getElementById('typeAudio');
+        const typeOther = document.getElementById('typeOther');
+        const activityList = document.getElementById('activityList');
+        const refreshActivity = document.getElementById('refreshActivity');
+        
+        // Files management
+        const searchFiles = document.getElementById('searchFiles');
+        const filterType = document.getElementById('filterType');
+        const filesTable = document.getElementById('filesTable');
+        const selectAll = document.getElementById('selectAll');
+        const deleteSelected = document.getElementById('deleteSelected');
+        const downloadSelected = document.getElementById('downloadSelected');
+        const selectedCount = document.getElementById('selectedCount');
+        
+        // Stats elements
+        const detailedStats = document.getElementById('detailedStats');
+        const storageImages = document.getElementById('storageImages');
+        const storageVideos = document.getElementById('storageVideos');
+        const storageAudio = document.getElementById('storageAudio');
+        const progressImages = document.getElementById('progressImages');
+        const progressVideos = document.getElementById('progressVideos');
+        const progressAudio = document.getElementById('progressAudio');
+        
+        // Settings elements
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+        const restartServer = document.getElementById('restartServer');
+        const backupServer = document.getElementById('backupServer');
+        
+        // Modals
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteModalText = document.getElementById('deleteModalText');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const confirmDelete = document.getElementById('confirmDelete');
+        
+        // Toast
+        const toast = document.getElementById('toast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastIconClass = document.getElementById('toastIconClass');
+        
+        // State
         let isAuthenticated = false;
-
-        // 1. Gestion du thème
-        function toggleTheme() {
-            const html = document.documentElement;
-            const current = html.getAttribute('data-theme');
-            const next = current === 'light' ? 'dark' : 'light';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            updateThemeIcon(next);
-        }
-
-        function updateThemeIcon(theme) {
-            const icon = document.getElementById('themeIcon');
-            if(theme === 'dark') {
-                icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-            } else {
-                icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-            }
-        }
-
-        if(localStorage.getItem('theme') === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            updateThemeIcon('dark');
-        }
-
-        // 2. Vérification de l'authentification
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('adminToken');
-            if (token === 'authenticated') {
-                isAuthenticated = true;
-                document.getElementById('loginModal').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
-                loadData();
-            } else {
-                document.getElementById('loginModal').style.display = 'flex';
-            }
-        });
-
-        // 3. Formulaire de connexion
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        let filesData = [];
+        let selectedFiles = new Set();
+        let currentPanel = 'dashboard';
+        
+        // Show toast notification
+        function showToast(title, message, type = 'info') {
+            const colors = {
+                success: { bg: 'bg-green-500', icon: 'fa-check' },
+                error: { bg: 'bg-red-500', icon: 'fa-times' },
+                warning: { bg: 'bg-yellow-500', icon: 'fa-exclamation' },
+                info: { bg: 'bg-blue-500', icon: 'fa-info' }
+            };
             
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const loginBtnText = document.getElementById('loginBtnText');
-            const loginError = document.getElementById('loginError');
+            toastIcon.className = `${colors[type].bg} w-8 h-8 rounded-full flex items-center justify-center mr-3`;
+            toastIconClass.className = `fas ${colors[type].icon}`;
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
             
-            loginBtn.disabled = true;
-            loginBtnText.textContent = 'Connexion...';
-            loginError.style.display = 'none';
+            toast.classList.remove('translate-y-full');
+            setTimeout(() => {
+                toast.classList.add('translate-y-full');
+            }, 3000);
+        }
+        
+        // Login function
+        async function login() {
+            const password = adminPassword.value;
             
             try {
                 const response = await fetch('/api/login', {
@@ -700,252 +620,532 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    localStorage.setItem('adminToken', 'authenticated');
                     isAuthenticated = true;
-                    
-                    // Afficher un toast
-                    showToast('✅ Connexion réussie !');
-                    
-                    // Masquer la modal et afficher le contenu principal
-                    setTimeout(() => {
-                        document.getElementById('loginModal').style.display = 'none';
-                        document.getElementById('mainContent').style.display = 'block';
-                        loadData();
-                    }, 500);
+                    loginModal.style.display = 'none';
+                    mainLayout.classList.remove('hidden');
+                    showToast('Connexion réussie', 'Bienvenue dans le panel admin', 'success');
+                    loadData();
                 } else {
-                    loginError.textContent = data.message || 'Mot de passe incorrect';
-                    loginError.style.display = 'block';
-                    document.getElementById('password').value = '';
+                    loginError.classList.remove('hidden');
+                    adminPassword.value = '';
+                    adminPassword.focus();
                 }
             } catch (error) {
-                loginError.textContent = 'Erreur de connexion au serveur';
-                loginError.style.display = 'block';
-            } finally {
-                loginBtn.disabled = false;
-                loginBtnText.textContent = 'Se connecter';
+                showToast('Erreur', 'Impossible de se connecter au serveur', 'error');
             }
-        });
-
-        // 4. Chargement des données
+        }
+        
+        // Logout function
+        function logout() {
+            isAuthenticated = false;
+            mainLayout.classList.add('hidden');
+            loginModal.style.display = 'flex';
+            loginError.classList.add('hidden');
+            adminPassword.value = '';
+            selectedFiles.clear();
+            filesData = [];
+        }
+        
+        // Load all data
         async function loadData() {
-            showLoading();
-            
+            await Promise.all([
+                loadDashboardStats(),
+                loadFilesList(),
+                loadActivity()
+            ]);
+        }
+        
+        // Load dashboard stats
+        async function loadDashboardStats() {
             try {
-                // Charger les statistiques
-                const statsResponse = await fetch('/api/stats');
-                if (statsResponse.ok) {
-                    const statsData = await statsResponse.json();
-                    updateStats(statsData);
-                }
+                const response = await fetch('/api/stats');
+                const data = await response.json();
                 
-                // Charger les fichiers
-                const filesResponse = await fetch('/api/files');
-                if (filesResponse.ok) {
-                    const filesData = await filesResponse.json();
-                    currentFiles = filesData.files || filesData;
-                    displayFiles(currentFiles);
+                if (data.success) {
+                    statFiles.textContent = data.stats.totalFiles;
+                    statStorage.textContent = data.stats.totalSize;
+                    
+                    typeImages.textContent = data.stats.byType.image || 0;
+                    typeVideos.textContent = data.stats.byType.video || 0;
+                    typeAudio.textContent = data.stats.byType.audio || 0;
+                    typeOther.textContent = data.stats.byType.other || 0;
+                    
+                    // Update total in top bar
+                    document.getElementById('totalFiles').textContent = `${data.stats.totalFiles} fichiers`;
+                    document.getElementById('totalStorage').textContent = data.stats.totalSize;
                 }
-                
-                hideLoading();
             } catch (error) {
-                console.error('Erreur chargement données:', error);
-                hideLoading();
-                showEmptyState('Erreur de connexion au serveur');
+                console.error('Erreur chargement stats:', error);
             }
         }
-
-        function updateStats(stats) {
-            document.getElementById('totalFiles').textContent = stats.stats?.totalFiles || stats.totalFiles || 0;
-            document.getElementById('storageUsed').textContent = stats.stats?.storageUsed || stats.totalSize || '0 MB';
-            document.getElementById('imageCount').textContent = stats.stats?.byType?.image || 0;
-            document.getElementById('videoCount').textContent = stats.stats?.byType?.video || 0;
+        
+        // Load files list
+        async function loadFilesList() {
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+                
+                if (data.success) {
+                    filesData = data.files;
+                    renderFilesTable(filesData);
+                    
+                    // Update last upload
+                    if (filesData.length > 0) {
+                        const lastFile = filesData[0];
+                        const date = new Date(lastFile.date);
+                        statLastUpload.textContent = date.toLocaleDateString();
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur chargement fichiers:', error);
+            }
         }
-
-        function displayFiles(files) {
-            const tbody = document.getElementById('filesTableBody');
-            tbody.innerHTML = '';
+        
+        // Render files table
+        function renderFilesTable(files) {
+            filesTable.innerHTML = '';
             
-            if (!files || files.length === 0) {
-                showEmptyState('Aucun fichier trouvé');
+            if (files.length === 0) {
+                filesTable.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-gray-500">
+                            <i class="fas fa-folder-open text-4xl mb-3"></i>
+                            <p>Aucun fichier trouvé</p>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
             
             files.forEach(file => {
+                const isSelected = selectedFiles.has(file.name);
+                const icon = file.type === 'image' ? 'fa-image' : 
+                            file.type === 'video' ? 'fa-video' : 
+                            file.type === 'audio' ? 'fa-music' : 'fa-file';
+                
+                const iconColor = file.type === 'image' ? 'text-blue-400' : 
+                                file.type === 'video' ? 'text-purple-400' : 
+                                file.type === 'audio' ? 'text-green-400' : 'text-gray-400';
+                
+                const date = new Date(file.date).toLocaleDateString();
+                
                 const row = document.createElement('tr');
-                
-                // Icône selon le type
-                let icon = '📄';
-                let typeClass = 'type-other';
-                let typeText = 'Autre';
-                
-                if (file.type === 'image') {
-                    icon = '🖼️';
-                    typeClass = 'type-image';
-                    typeText = 'Image';
-                } else if (file.type === 'video') {
-                    icon = '🎬';
-                    typeClass = 'type-video';
-                    typeText = 'Vidéo';
-                } else if (file.type === 'audio') {
-                    icon = '🎵';
-                    typeClass = 'type-audio';
-                    typeText = 'Audio';
-                } else if (file.type === 'document') {
-                    icon = '📄';
-                    typeClass = 'type-document';
-                    typeText = 'Document';
-                }
-                
-                // Formatage de la date
-                const date = new Date(file.date || file.lastModified);
-                const formattedDate = date.toLocaleDateString('fr-FR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                // Nom du fichier (tronqué si trop long)
-                const fileName = file.originalName || file.name;
-                const displayName = fileName.length > 30 ? 
-                    fileName.substring(0, 30) + '...' : fileName;
-                
+                row.className = 'table-row-hover';
                 row.innerHTML = `
-                    <td>
-                        <div class="file-name">
-                            <span>${icon}</span>
-                            <span title="${fileName}">${displayName}</span>
+                    <td class="py-3 px-4">
+                        <input type="checkbox" class="file-checkbox" data-filename="${file.name}" ${isSelected ? 'checked' : ''}>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3">
+                                <i class="fas ${icon} ${iconColor}"></i>
+                            </div>
+                            <div class="max-w-xs truncate" title="${file.name}">
+                                ${file.name}
+                            </div>
                         </div>
                     </td>
-                    <td>${file.size}</td>
-                    <td><span class="file-type ${typeClass}">${typeText}</span></td>
-                    <td>${formattedDate}</td>
-                    <td>
-                        <div class="file-actions">
-                            <button class="btn-action btn-view" onclick="viewFile('${file.url}', '${fileName}')">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                                Voir
+                    <td class="py-3 px-4">
+                        <span class="px-3 py-1 rounded-full text-xs ${getTypeBadgeClass(file.type)}">
+                            ${file.type}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">${file.size}</td>
+                    <td class="py-3 px-4">${date}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex space-x-2">
+                            <button onclick="viewFile('${file.url}')" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                                <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn-action btn-delete" onclick="deleteFile('${file.name}', '${fileName}')">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                                Supprimer
+                            <button onclick="copyFileUrl('${file.url}')" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button onclick="deleteFile('${file.name}', '${file.url}')" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-red-400">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </td>
                 `;
                 
-                tbody.appendChild(row);
-            });
-        }
-
-        // 5. Recherche
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            
-            if (!searchTerm) {
-                displayFiles(currentFiles);
-                return;
-            }
-            
-            const filteredFiles = currentFiles.filter(file => {
-                const fileName = (file.originalName || file.name).toLowerCase();
-                const fileType = file.type || '';
-                return fileName.includes(searchTerm) || fileType.includes(searchTerm);
+                filesTable.appendChild(row);
             });
             
-            displayFiles(filteredFiles);
-        });
-
-        // 6. Actions sur les fichiers
-        function viewFile(url, fileName) {
-            window.open(url, '_blank');
+            updateSelectionCount();
         }
-
-        async function deleteFile(filename, displayName) {
-            if (!confirm(`Êtes-vous sûr de vouloir supprimer "${displayName}" ?\nCette action est irréversible.`)) {
-                return;
-            }
+        
+        // Get badge class for file type
+        function getTypeBadgeClass(type) {
+            const classes = {
+                image: 'bg-blue-500/20 text-blue-300',
+                video: 'bg-purple-500/20 text-purple-300',
+                audio: 'bg-green-500/20 text-green-300',
+                document: 'bg-yellow-500/20 text-yellow-300',
+                archive: 'bg-orange-500/20 text-orange-300',
+                other: 'bg-gray-500/20 text-gray-300'
+            };
             
+            return classes[type] || classes.other;
+        }
+        
+        // Load activity
+        async function loadActivity() {
             try {
-                const encodedFilename = encodeURIComponent(filename);
-                const response = await fetch(`/api/files/${encodedFilename}`, {
-                    method: 'DELETE'
-                });
-                
+                const response = await fetch('/api/files');
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`🗑️ "${displayName}" supprimé avec succès`);
+                    activityList.innerHTML = '';
                     
-                    // Rafraîchir la liste
-                    setTimeout(() => {
-                        loadData();
-                    }, 500);
-                } else {
-                    showToast(`❌ Erreur: ${data.message}`, 'error');
+                    data.files.slice(0, 5).forEach(file => {
+                        const date = new Date(file.date);
+                        const timeAgo = getTimeAgo(date);
+                        
+                        activityList.innerHTML += `
+                            <div class="flex items-center p-4 rounded-lg bg-white/5">
+                                <div class="w-10 h-10 rounded-xl ${getActivityIconColor(file.type)} flex items-center justify-center mr-4">
+                                    <i class="fas ${getActivityIcon(file.type)}"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold">${file.name.substring(0, 30)}${file.name.length > 30 ? '...' : ''}</p>
+                                    <p class="text-sm text-gray-400">Uploadé ${timeAgo} • ${file.size}</p>
+                                </div>
+                                <a href="${file.url}" target="_blank" class="ml-2 p-2 hover:bg-white/10 rounded-lg transition-colors">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        `;
+                    });
                 }
             } catch (error) {
-                showToast('❌ Erreur de connexion au serveur', 'error');
+                console.error('Erreur chargement activité:', error);
             }
         }
-
-        function refreshData() {
-            showToast('🔄 Rafraîchissement en cours...');
-            loadData();
+        
+        // Get activity icon
+        function getActivityIcon(type) {
+            return type === 'image' ? 'fa-image' : 
+                   type === 'video' ? 'fa-video' : 
+                   type === 'audio' ? 'fa-music' : 'fa-file-upload';
         }
-
-        // 7. Fonctions utilitaires
-        function showLoading() {
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('filesTable').style.display = 'none';
+        
+        // Get activity icon color
+        function getActivityIconColor(type) {
+            return type === 'image' ? 'bg-blue-500/20 text-blue-400' : 
+                   type === 'video' ? 'bg-purple-500/20 text-purple-400' : 
+                   type === 'audio' ? 'bg-green-500/20 text-green-400' : 
+                   'bg-gray-500/20 text-gray-400';
         }
-
-        function hideLoading() {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('filesTable').style.display = 'table';
-        }
-
-        function showEmptyState(message = 'Aucun fichier trouvé') {
-            const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = `
-                <div class="empty-icon">📭</div>
-                <h3>${message}</h3>
-                <p>Les fichiers uploadés apparaîtront ici.</p>
-            `;
-            emptyState.style.display = 'block';
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('filesTable').style.display = 'none';
-        }
-
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
+        
+        // Get time ago
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
             
-            if (type === 'error') {
-                toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " an" + (Math.floor(interval) > 1 ? "s" : "");
+            
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " mois";
+            
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " jour" + (Math.floor(interval) > 1 ? "s" : "");
+            
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " heure" + (Math.floor(interval) > 1 ? "s" : "");
+            
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " minute" + (Math.floor(interval) > 1 ? "s" : "");
+            
+            return Math.floor(seconds) + " seconde" + (Math.floor(seconds) > 1 ? "s" : "");
+        }
+        
+        // Update selection count
+        function updateSelectionCount() {
+            const count = selectedFiles.size;
+            selectedCount.textContent = count;
+            
+            deleteSelected.disabled = count === 0;
+            downloadSelected.disabled = count === 0;
+            
+            selectAll.checked = count > 0 && count === filesData.length;
+            selectAll.indeterminate = count > 0 && count < filesData.length;
+        }
+        
+        // View file
+        function viewFile(url) {
+            window.open(url, '_blank');
+        }
+        
+        // Copy file URL
+        function copyFileUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Copié', 'URL copiée dans le presse-papier', 'success');
+            });
+        }
+        
+        // Delete file
+        async function deleteFile(filename, url) {
+            deleteModalText.textContent = `Êtes-vous sûr de vouloir supprimer "${filename}" ? Cette action est irréversible.`;
+            
+            deleteModal.classList.remove('hidden');
+            
+            const confirm = await new Promise(resolve => {
+                confirmDelete.onclick = () => {
+                    deleteModal.classList.add('hidden');
+                    resolve(true);
+                };
+                
+                cancelDelete.onclick = () => {
+                    deleteModal.classList.add('hidden');
+                    resolve(false);
+                };
+            });
+            
+            if (confirm) {
+                try {
+                    const response = await fetch(`/api/files/${encodeURIComponent(filename)}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast('Supprimé', `Fichier "${filename}" supprimé`, 'success');
+                        loadData();
+                        selectedFiles.delete(filename);
+                        updateSelectionCount();
+                    } else {
+                        showToast('Erreur', data.message, 'error');
+                    }
+                } catch (error) {
+                    showToast('Erreur', 'Impossible de supprimer le fichier', 'error');
+                }
+            }
+        }
+        
+        // Switch panel
+        function switchPanel(panel) {
+            // Hide all panels
+            dashboardPanel.classList.add('hidden');
+            filesPanel.classList.add('hidden');
+            statsPanel.classList.add('hidden');
+            settingsPanel.classList.add('hidden');
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.className = item.className.replace('bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30', 'hover:bg-white/5');
+            });
+            
+            // Show selected panel
+            currentPanel = panel;
+            switch(panel) {
+                case 'dashboard':
+                    dashboardPanel.classList.remove('hidden');
+                    navDashboard.className = 'nav-item flex items-center p-3 rounded-lg bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30';
+                    break;
+                case 'files':
+                    filesPanel.classList.remove('hidden');
+                    navFiles.className = 'nav-item flex items-center p-3 rounded-lg bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30';
+                    break;
+                case 'stats':
+                    statsPanel.classList.remove('hidden');
+                    navStats.className = 'nav-item flex items-center p-3 rounded-lg bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30';
+                    break;
+                case 'settings':
+                    settingsPanel.classList.remove('hidden');
+                    navSettings.className = 'nav-item flex items-center p-3 rounded-lg bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30';
+                    break;
+            }
+        }
+        
+        // Event Listeners
+        loginBtn.addEventListener('click', login);
+        
+        adminPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        logoutBtn.addEventListener('click', logout);
+        
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        
+        // Navigation
+        navDashboard.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchPanel('dashboard');
+        });
+        
+        navFiles.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchPanel('files');
+        });
+        
+        navStats.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchPanel('stats');
+        });
+        
+        navSettings.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchPanel('settings');
+        });
+        
+        // Refresh buttons
+        refreshActivity.addEventListener('click', loadActivity);
+        document.getElementById('refreshBtn').addEventListener('click', loadData);
+        
+        // Files table selection
+        selectAll.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            
+            if (isChecked) {
+                filesData.forEach(file => selectedFiles.add(file.name));
             } else {
-                toast.style.background = 'var(--gradient)';
+                selectedFiles.clear();
             }
             
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            renderFilesTable(filesData);
+        });
+        
+        // Handle individual checkbox changes
+        filesTable.addEventListener('change', (e) => {
+            if (e.target.classList.contains('file-checkbox')) {
+                const filename = e.target.dataset.filename;
+                
+                if (e.target.checked) {
+                    selectedFiles.add(filename);
+                } else {
+                    selectedFiles.delete(filename);
+                }
+                
+                updateSelectionCount();
+            }
+        });
+        
+        // Delete selected files
+        deleteSelected.addEventListener('click', async () => {
+            if (selectedFiles.size === 0) return;
+            
+            deleteModalText.textContent = `Êtes-vous sûr de vouloir supprimer ${selectedFiles.size} fichier(s) ? Cette action est irréversible.`;
+            deleteModal.classList.remove('hidden');
+            
+            const confirm = await new Promise(resolve => {
+                confirmDelete.onclick = () => {
+                    deleteModal.classList.add('hidden');
+                    resolve(true);
+                };
+                
+                cancelDelete.onclick = () => {
+                    deleteModal.classList.add('hidden');
+                    resolve(false);
+                };
+            });
+            
+            if (confirm) {
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const filename of selectedFiles) {
+                    try {
+                        const response = await fetch(`/api/files/${encodeURIComponent(filename)}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (error) {
+                        errorCount++;
+                    }
+                }
+                
+                if (successCount > 0) {
+                    showToast('Supprimé', `${successCount} fichier(s) supprimé(s)`, 'success');
+                }
+                
+                if (errorCount > 0) {
+                    showToast('Erreur', `${errorCount} fichier(s) n'ont pas pu être supprimés`, 'error');
+                }
+                
+                selectedFiles.clear();
+                loadData();
+            }
+        });
+        
+        // Search and filter
+        searchFiles.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterFiles();
+        });
+        
+        filterType.addEventListener('change', filterFiles);
+        
+        function filterFiles() {
+            const searchTerm = searchFiles.value.toLowerCase();
+            const typeFilter = filterType.value;
+            
+            let filtered = filesData;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(file => 
+                    file.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (typeFilter !== 'all') {
+                filtered = filtered.filter(file => file.type === typeFilter);
+            }
+            
+            renderFilesTable(filtered);
         }
-
-        // 8. Déconnexion (optionnelle - ajouter dans le header si besoin)
-        function logout() {
-            localStorage.removeItem('adminToken');
-            window.location.reload();
-        }
+        
+        // Settings actions
+        clearAllBtn.addEventListener('click', async () => {
+            deleteModalText.textContent = 'Êtes-vous sûr de vouloir supprimer TOUS les fichiers ? Cette action est irréversible et supprimera tout le contenu du serveur.';
+            deleteModal.classList.remove('hidden');
+            
+            const confirm = await new Promise(resolve => {
+                confirmDelete.onclick = () => {
+                    deleteModal.classList.add('hidden');
+                    resolve(true);
+                };
+                
+                cancelDelete.onclick = () => {
+                    deleteModal.classList.add('hidden');
+                    resolve(false);
+                };
+            });
+            
+            if (confirm) {
+                showToast('Info', 'Cette fonctionnalité sera implémentée dans une version future', 'info');
+            }
+        });
+        
+        // Simulate server info
+        document.getElementById('serverUploadDir').textContent = './uploads';
+        document.getElementById('serverPort').textContent = window.location.port || 3000;
+        
+        // Initial setup
+        switchPanel('dashboard');
+        
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+            if (isAuthenticated) {
+                loadData();
+            }
+        }, 30000);
+        
+        // Welcome message
+        setTimeout(() => {
+            adminPassword.focus();
+        }, 100);
     </script>
 </body>
-                        </html>
+    </html>
